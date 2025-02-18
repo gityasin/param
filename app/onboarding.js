@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 20,
+    paddingVertical: Platform.OS === 'web' ? 10 : 15,
   },
   buttonContainer: {
     width: '100%',
@@ -281,21 +281,21 @@ const styles = StyleSheet.create({
   },
   welcomeTitle: {
     textAlign: 'center',
-    marginTop: Platform.OS === 'web' ? '5%' : '10%',
-    marginBottom: Platform.OS === 'web' ? '5%' : '10%',
-    fontSize: 32,
+    marginTop: Platform.OS === 'web' ? '3%' : '5%',
+    marginBottom: Platform.OS === 'web' ? '3%' : '5%',
+    fontSize: Platform.OS === 'web' ? 28 : 24,
     fontWeight: 'bold',
   },
   title: {
-    marginBottom: 32,
+    marginBottom: 24,
     textAlign: 'center',
-    fontSize: 28,
+    fontSize: Platform.OS === 'web' ? 24 : 20,
   },
   optionsContainer: {
     width: '100%',
     maxWidth: 400,
     alignItems: 'center',
-    marginVertical: 16,
+    marginVertical: 8,
   },
   optionButton: {
     marginVertical: 8,
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   },
   currencyList: {
     width: '100%',
-    maxHeight: Platform.OS === 'web' ? '60vh' : '50vh',
+    maxHeight: Platform.OS === 'web' ? '50vh' : '40vh',
   },
   currencyGridContainer: {
     flexDirection: 'row',
@@ -318,8 +318,8 @@ const styles = StyleSheet.create({
   },
   currencyButton: {
     width: '45%',
-    margin: '2.5%',
-    minWidth: 150,
+    margin: '2%',
+    minWidth: 130,
   },
   navigationButtonsContainer: {
     width: '100%',
