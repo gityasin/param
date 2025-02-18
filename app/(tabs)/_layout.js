@@ -12,6 +12,7 @@ export default function TabLayout() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Tabs
         screenOptions={{
+          title: 'PARAM',
           headerStyle: {
             backgroundColor: colors.background,
             elevation: 0,
@@ -39,7 +40,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="index"
           options={{
-            title: 'PARA',
+            title: 'PARAM',
             tabBarLabel: t('tabHome'),
             tabBarIcon: ({ color, size }) => (
               <MaterialCommunityIcons name="home" size={size} color={color} />

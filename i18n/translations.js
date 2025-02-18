@@ -89,7 +89,7 @@ export const translations = {
     next: 'Next',
     previous: 'Previous',
     getStarted: 'Get Started',
-    welcome: 'Welcome to PARA',
+    welcome: 'Welcome to PARAM',
 
     // Navigation
     tabHome: 'Home',
@@ -190,7 +190,7 @@ export const translations = {
     next: 'İleri',
     previous: 'Geri',
     getStarted: 'Başlayın',
-    welcome: 'PARA\'ya Hoş Geldiniz',
+    welcome: 'PARAM\'a Hoş Geldiniz',
 
     // Navigation
     tabHome: 'Ana Sayfa',
