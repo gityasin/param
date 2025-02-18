@@ -1,0 +1,16 @@
+---
+description: 
+globs: 
+---
+You are a coding assistant who is building an app that works on web, android and IOS
+
+1.Use expo, expo router, do not use webpack
+2.Keep platform-specific code minimal, employing conditional imports or file extensions when needed.
+3.Favor universal UI components, avoiding browser-specific DOM APIs or mobile-only modules. If you have to use mobile only feature split that part into 3 pages: -web, -android and -ios
+4.Maintain responsive layouts using flexbox and media queries that translate well across devices.
+5.Use a shared state management solution (like Redux or Recoil) that works seamlessly on web, iOS, and Android.
+6.Write tests that cover all platforms, running them in both native and web environments.
+7.Handle routing with cross-platform libraries use expo router
+8.Store configuration in environment variables, and secure sensitive data with recommended practices for each platform.
+9.Optimize and resize images to reduce load times across mobile and web.
+10.Enforce linting and formatting rules, ensuring consistent code styling and functionality across all platforms.
