@@ -268,11 +268,11 @@ export default function SettingsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView>
+        {/* App Settings Section */}
         <Surface style={[styles.surface, { backgroundColor: colors.surface }]} elevation={1}>
           <Text variant="titleLarge" style={[styles.sectionTitle, { color: colors.text }]}>
             {t('appSettings')}
           </Text>
-          
           <List.Section>
             <List.Item
               title={t('darkMode')}
@@ -367,6 +367,7 @@ export default function SettingsScreen() {
           </List.Section>
         </Surface>
 
+        {/* Categories Section */}
         <Surface style={[styles.surface, { backgroundColor: colors.surface }]} elevation={1}>
           <View style={styles.sectionHeader}>
             <Text variant="titleLarge" style={[styles.sectionTitle, { color: colors.text }]}>
@@ -378,7 +379,6 @@ export default function SettingsScreen() {
               onPress={() => setShowAddCategory(true)}
             />
           </View>
-
           <List.Section>
             {categories.map((category) => (
               <React.Fragment key={category}>
@@ -419,8 +419,72 @@ export default function SettingsScreen() {
             ))}
           </List.Section>
         </Surface>
-      </ScrollView>
 
+        {/* About Section */}
+        <Surface style={[styles.surface, { backgroundColor: colors.surface }]} elevation={1}>
+          <Text variant="titleLarge" style={[styles.sectionTitle, { color: colors.text }]}>
+            {t('about')}
+          </Text>
+          <List.Section>
+            <List.Item
+              title={t('version')}
+              description="1.0.0"
+              left={props => (
+                <MaterialCommunityIcons
+                  name="information"
+                  size={24}
+                  color={colors.primary}
+                  style={props.style}
+                />
+              )}
+            />
+            <Divider />
+            <List.Item
+              title={t('helpAndSupport')}
+              description={t('helpDesc')}
+              left={props => (
+                <MaterialCommunityIcons
+                  name="help-circle"
+                  size={24}
+                  color={colors.primary}
+                  style={props.style}
+                />
+              )}
+              onPress={() => {/* Add help action here */}}
+              right={props => (
+                <MaterialCommunityIcons
+                  name="chevron-right"
+                  size={24}
+                  color={props.color}
+                  style={props.style}
+                />
+              )}
+            />
+            <Divider />
+            <List.Item
+              title={t('privacyPolicy')}
+              description={t('privacyPolicyDesc')}
+              left={props => (
+                <MaterialCommunityIcons
+                  name="shield-account"
+                  size={24}
+                  color={colors.primary}
+                  style={props.style}
+                />
+              )}
+              onPress={() => {/* Add privacy policy action here */}}
+              right={props => (
+                <MaterialCommunityIcons
+                  name="chevron-right"
+                  size={24}
+                  color={props.color}
+                  style={props.style}
+                />
+              )}
+            />
+          </List.Section>
+        </Surface>
+      </ScrollView>
       {renderAddCategoryDialog()}
       {renderEditCategoryDialog()}
       {renderCurrencySelector()}
