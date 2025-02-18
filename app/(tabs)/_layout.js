@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router';
 import { useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLanguage } from '../../context/LanguageContext';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 
 export default function TabLayout() {
   const { colors } = useTheme();
@@ -12,7 +12,6 @@ export default function TabLayout() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Tabs
         screenOptions={{
-          title: 'PARAM',
           headerStyle: {
             backgroundColor: colors.background,
             elevation: 0,
@@ -25,15 +24,23 @@ export default function TabLayout() {
           tabBarStyle: {
             backgroundColor: colors.surface,
             borderTopColor: colors.border,
-            paddingVertical: 8,
-            height: 60,
+            borderTopWidth: 1,
+            height: Platform.OS === 'ios' ? 85 : 60,
+            paddingBottom: Platform.OS === 'ios' ? 25 : 0,
+            paddingTop: 8,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: -2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 2,
+            elevation: 8,
+            zIndex: 1000,
           },
-          tabBarShowLabel: true,
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textSecondary,
           tabBarLabelStyle: {
             fontSize: 12,
             fontWeight: '500',
+            paddingBottom: Platform.OS === 'android' ? 4 : 0,
           },
         }}
       >
@@ -77,8 +84,5 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
-    minHeight: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
   },
 });

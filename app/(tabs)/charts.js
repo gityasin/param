@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import { View, StyleSheet, ScrollView, Dimensions, Platform } from 'react-native';
 import { Text, Surface, useTheme, SegmentedButtons } from 'react-native-paper';
 import { VictoryPie } from 'victory-native';
 import { useTransactions } from '../../context/TransactionsContext';
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: Platform.OS === 'ios' ? 100 : 80, // Adjusted padding for new navbar heights
     alignItems: 'center',
     width: '100%',
   },

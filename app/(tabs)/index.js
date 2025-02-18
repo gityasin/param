@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, FlatList } from 'react-native';
+import { View, StyleSheet, FlatList, Platform } from 'react-native';
 import { Text, FAB, Surface, useTheme, Divider } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTransactions } from '../../context/TransactionsContext';
@@ -128,9 +128,9 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
-    paddingBottom: 80,
+    paddingBottom: Platform.OS === 'web' ? 80 : 100, // Increased padding for mobile
     flexGrow: 1,
-    minHeight: '100%',
+    minHeight: Platform.OS === 'web' ? '100%' : 'auto',
   },
   summaryContainer: {
     padding: 16,
@@ -168,6 +168,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     margin: 16,
     right: 0,
-    bottom: 0,
+    bottom: Platform.OS === 'ios' ? 25 : 16, // Reduced bottom margin to bring FAB closer to bottom
   },
 });

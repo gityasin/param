@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, TouchableOpacity, Platform } from 'react-native';
 import { Text, Button, useTheme, SegmentedButtons } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -210,42 +210,46 @@ export default function OnboardingScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Text variant="displaySmall" style={[styles.welcomeTitle, { color: colors.primary }]}>
-        {t('welcome')}
-      </Text>
-      
-      <View style={styles.stepContainer}>
-        {steps[currentStep]()}
+      <View style={styles.content}>
+        <Text variant="displaySmall" style={[styles.welcomeTitle, { color: colors.primary }]}>
+          {t('welcome')}
+        </Text>
+        
+        <View style={styles.stepContainer}>
+          {steps[currentStep]()}
+        </View>
       </View>
       
-      <View style={styles.navigationButtons}>
-        {currentStep > 0 && (
-          <Button
-            mode="outlined"
-            onPress={() => setCurrentStep(prev => prev - 1)}
-            style={[styles.navButton, { flex: 1, marginRight: 8 }]}
-          >
-            {t('previous')}
-          </Button>
-        )}
-        
-        {currentStep < steps.length - 1 ? (
-          <Button
-            mode="contained"
-            onPress={() => setCurrentStep(prev => prev + 1)}
-            style={[styles.navButton, { flex: 1, marginLeft: currentStep > 0 ? 8 : 0 }]}
-          >
-            {t('next')}
-          </Button>
-        ) : (
-          <Button
-            mode="contained"
-            onPress={handleComplete}
-            style={[styles.navButton, { flex: 1, marginLeft: currentStep > 0 ? 8 : 0 }]}
-          >
-            {t('getStarted')}
-          </Button>
-        )}
+      <View style={[styles.navigationButtonsContainer, { backgroundColor: colors.background }]}>
+        <View style={styles.navigationButtons}>
+          {currentStep > 0 && (
+            <Button
+              mode="outlined"
+              onPress={() => setCurrentStep(prev => prev - 1)}
+              style={[styles.navButton, { flex: 1, marginRight: 8 }]}
+            >
+              {t('previous')}
+            </Button>
+          )}
+          
+          {currentStep < steps.length - 1 ? (
+            <Button
+              mode="contained"
+              onPress={() => setCurrentStep(prev => prev + 1)}
+              style={[styles.navButton, { flex: 1, marginLeft: currentStep > 0 ? 8 : 0 }]}
+            >
+              {t('next')}
+            </Button>
+          ) : (
+            <Button
+              mode="contained"
+              onPress={handleComplete}
+              style={[styles.navButton, { flex: 1, marginLeft: currentStep > 0 ? 8 : 0 }]}
+            >
+              {t('getStarted')}
+            </Button>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -254,8 +258,10 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  content: {
+    flex: 1,
     padding: 16,
-    justifyContent: 'space-between',
   },
   stepContainer: {
     flex: 1,
@@ -275,8 +281,8 @@ const styles = StyleSheet.create({
   },
   welcomeTitle: {
     textAlign: 'center',
-    marginTop: '5%',
-    marginBottom: '5%',
+    marginTop: Platform.OS === 'web' ? '5%' : '10%',
+    marginBottom: Platform.OS === 'web' ? '5%' : '10%',
     fontSize: 32,
     fontWeight: 'bold',
   },
@@ -301,7 +307,7 @@ const styles = StyleSheet.create({
   },
   currencyList: {
     width: '100%',
-    maxHeight: '60vh',
+    maxHeight: Platform.OS === 'web' ? '60vh' : '50vh',
   },
   currencyGridContainer: {
     flexDirection: 'row',
@@ -315,10 +321,15 @@ const styles = StyleSheet.create({
     margin: '2.5%',
     minWidth: 150,
   },
+  navigationButtonsContainer: {
+    width: '100%',
+    paddingHorizontal: 16,
+    paddingBottom: Platform.OS === 'web' ? 16 : 24,
+    paddingTop: 8,
+  },
   navigationButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 16,
     maxWidth: 400,
     width: '100%',
     alignSelf: 'center',
