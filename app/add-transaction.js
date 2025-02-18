@@ -57,7 +57,7 @@ export default function AddTransactionScreen() {
   const initialValuesRef = React.useRef(null);
   
   const { dispatch, selectedCurrency } = useTransactions();
-  const { categories, addCategory, getCategoryIcon } = useCategories();
+  const { categories, addCategory, getCategoryIcon, getCategoryColor } = useCategories();
   const theme = useTheme();
   const { colors } = theme;
   const { t } = useLanguage();
@@ -161,8 +161,20 @@ export default function AddTransactionScreen() {
             value={transactionType}
             onValueChange={setTransactionType}
             buttons={[
-              { value: 'expense', label: t('expense') },
-              { value: 'income', label: t('income') },
+              { 
+                value: 'expense', 
+                label: t('expense'),
+                style: {
+                  backgroundColor: transactionType === 'expense' ? colors.error + '20' : undefined
+                }
+              },
+              { 
+                value: 'income', 
+                label: t('income'),
+                style: {
+                  backgroundColor: transactionType === 'income' ? colors.success + '20' : undefined
+                }
+              },
             ]}
             style={styles.segmentedButtons}
           />
@@ -217,7 +229,7 @@ export default function AddTransactionScreen() {
                         <MaterialCommunityIcons
                           name={category ? getCategoryIcon(category) : "menu-down"}
                           size={24}
-                          color={colors.primary}
+                          color={category ? getCategoryColor(category) : colors.primary}
                         />
                       )}
                       onPress={() => setShowCategoryMenu(true)}
@@ -254,7 +266,7 @@ export default function AddTransactionScreen() {
                     <MaterialCommunityIcons
                       name={getCategoryIcon(cat)}
                       size={24}
-                      color={colors.primary}
+                      color={getCategoryColor(cat)}
                     />
                   )}
                   style={Platform.select({

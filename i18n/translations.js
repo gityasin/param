@@ -18,6 +18,9 @@ export const translations = {
     bills: 'Bills',
     entertainment: 'Entertainment',
     other: 'Other',
+    salary: 'Salary',
+    rent: 'Rent',
+    groceries: 'Groceries',
     
     // Settings Screen
     appSettings: 'App Settings',
@@ -119,6 +122,9 @@ export const translations = {
     bills: 'Faturalar',
     entertainment: 'Eğlence',
     other: 'Diğer',
+    salary: 'Maaş',
+    rent: 'Kira',
+    groceries: 'Market',
     
     // Settings Screen
     appSettings: 'Uygulama Ayarları',

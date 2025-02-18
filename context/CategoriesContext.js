@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from './LanguageContext';
+import { translations } from '../i18n/translations';
 
 const CATEGORIES_STORAGE_KEY = '@categories';
 const CATEGORY_COLORS_KEY = '@category_colors';
 
 // Default category keys - these match the translation keys
-const DEFAULT_CATEGORY_KEYS = ['food', 'transport', 'shopping', 'bills', 'entertainment', 'other'];
+const DEFAULT_CATEGORY_KEYS = ['food', 'transport', 'shopping', 'bills', 'entertainment', 'salary', 'rent', 'groceries', 'other'];
 
 // A set of distinguishable colors
 const CATEGORY_COLORS = [
@@ -36,10 +37,27 @@ const CATEGORY_COLORS = [
 export const CATEGORY_ICONS = {
   food: 'silverware-fork-knife',
   transport: 'car',
-  shopping: 'cart',
+  shopping: 'shopping',
   bills: 'file-document',
   entertainment: 'gamepad-variant',
+  groceries: 'basket',
+  rent: 'home',
+  salary: 'cash-multiple',
   other: 'dots-horizontal',
+  
+  // Additional category icons for custom categories
+  health: 'medical-bag',
+  education: 'school',
+  investment: 'chart-line',
+  gift: 'gift',
+  clothing: 'hanger',
+  travel: 'airplane',
+  utilities: 'lightning-bolt',
+  internet: 'wifi',
+  phone: 'phone',
+  insurance: 'shield-check',
+  gym: 'dumbbell',
+  savings: 'piggy-bank'
 };
 
 const CategoriesContext = createContext();
@@ -58,25 +76,50 @@ export function CategoriesProvider({ children }) {
 
       // Get translated default categories
       const translatedDefaultCategories = DEFAULT_CATEGORY_KEYS.map(key => t(key));
-      let parsedCategories = translatedDefaultCategories;
-      let parsedColors = {};
+      let parsedCategories = [];
+      let parsedColors = storedColors ? JSON.parse(storedColors) : {};
 
       if (storedCategories) {
-        parsedCategories = JSON.parse(storedCategories);
+        const stored = JSON.parse(storedCategories);
+        // Update any default category names to their current translation
+        parsedCategories = stored.map(cat => {
+          // Find if this category was a default one by checking its untranslated version
+          const defaultKey = DEFAULT_CATEGORY_KEYS.find(key => {
+            const oldTranslation = Object.values(translations).some(lang => 
+              lang[key].toLowerCase() === cat.toLowerCase()
+            );
+            return oldTranslation;
+          });
+          
+          if (defaultKey) {
+            // If it was a default category, use current translation
+            const newTranslation = t(defaultKey);
+            // Update the color mapping if needed
+            if (parsedColors[cat]) {
+              parsedColors[newTranslation] = parsedColors[cat];
+              delete parsedColors[cat];
+            }
+            return newTranslation;
+          }
+          return cat;
+        });
+      } else {
+        // If no stored categories, use translated defaults
+        parsedCategories = translatedDefaultCategories;
       }
 
-      if (storedColors) {
-        parsedColors = JSON.parse(storedColors);
-      } else {
-        // Assign initial colors to default categories
-        parsedColors = parsedCategories.reduce((acc, category, index) => {
-          acc[category] = CATEGORY_COLORS[index % CATEGORY_COLORS.length];
-          return acc;
-        }, {});
-      }
+      // Ensure all categories have colors
+      parsedCategories.forEach((category, index) => {
+        if (!parsedColors[category]) {
+          parsedColors[category] = CATEGORY_COLORS[index % CATEGORY_COLORS.length];
+        }
+      });
 
       setCategories(parsedCategories);
       setCategoryColors(parsedColors);
+
+      // Save the updated translations
+      await saveCategoriesAndColors(parsedCategories, parsedColors);
     } catch (error) {
       console.error('Error loading categories and colors:', error);
     }
@@ -144,8 +187,20 @@ export function CategoriesProvider({ children }) {
   };
 
   const getCategoryIcon = (category) => {
-    const lowerCategory = category?.toLowerCase();
-    return CATEGORY_ICONS[lowerCategory] || 'tag';
+    if (!category) return 'tag';
+    
+    // First, check if it's a translated default category
+    const defaultKey = DEFAULT_CATEGORY_KEYS.find(key => {
+      const currentTranslation = t(key);
+      return currentTranslation.toLowerCase() === category.toLowerCase();
+    });
+    
+    if (defaultKey) {
+      return CATEGORY_ICONS[defaultKey];
+    }
+    
+    // If not a default category, use generic tag icon for custom categories
+    return 'tag';
   };
 
   return (
