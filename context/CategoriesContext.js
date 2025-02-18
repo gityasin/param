@@ -32,6 +32,16 @@ const CATEGORY_COLORS = [
   '#009432', // Green
 ];
 
+// Default category icons mapping
+export const CATEGORY_ICONS = {
+  food: 'silverware-fork-knife',
+  transport: 'car',
+  shopping: 'cart',
+  bills: 'file-document',
+  entertainment: 'gamepad-variant',
+  other: 'dots-horizontal',
+};
+
 const CategoriesContext = createContext();
 
 export function CategoriesProvider({ children }) {
@@ -133,6 +143,11 @@ export function CategoriesProvider({ children }) {
     return categoryColors[category] || CATEGORY_COLORS[0];
   };
 
+  const getCategoryIcon = (category) => {
+    const lowerCategory = category?.toLowerCase();
+    return CATEGORY_ICONS[lowerCategory] || 'tag';
+  };
+
   return (
     <CategoriesContext.Provider 
       value={{
@@ -141,6 +156,7 @@ export function CategoriesProvider({ children }) {
         removeCategory,
         updateCategory,
         getCategoryColor,
+        getCategoryIcon,
       }}
     >
       {children}

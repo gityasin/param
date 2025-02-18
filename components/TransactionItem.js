@@ -8,20 +8,11 @@ import { formatCurrency } from '../services/format';
 import { useLanguage } from '../context/LanguageContext';
 import { useCategories } from '../context/CategoriesContext';
 
-const CATEGORY_ICONS = {
-  Food: 'silverware-fork-knife',
-  Transport: 'car',
-  Shopping: 'cart',
-  Bills: 'file-document',
-  Entertainment: 'gamepad-variant',
-  Other: 'dots-horizontal',
-};
-
 const TransactionItem = ({ transaction }) => {
   const theme = useTheme();
   const { colors } = theme;
   const { dispatch, selectedCurrency } = useTransactions();
-  const { getCategoryColor } = useCategories();
+  const { getCategoryColor, getCategoryIcon } = useCategories();
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 });
   const [menuButtonHovered, setMenuButtonHovered] = useState(false);
@@ -30,7 +21,7 @@ const TransactionItem = ({ transaction }) => {
 
   const isExpense = transaction.amount < 0;
   const amount = Math.abs(transaction.amount);
-  const icon = CATEGORY_ICONS[transaction.category] || CATEGORY_ICONS.Other;
+  const icon = getCategoryIcon(transaction.category);
   const categoryColor = getCategoryColor(transaction.category);
 
   const formattedDate = new Date(transaction.date).toLocaleDateString(undefined, {

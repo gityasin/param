@@ -21,7 +21,7 @@ export default function SettingsScreen() {
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const currencies = getAvailableCurrencies();
   const { selectedCurrency, handleCurrencyChange } = useTransactions();
-  const { categories, addCategory, removeCategory, updateCategory, getCategoryColor } = useCategories();
+  const { categories, addCategory, removeCategory, updateCategory, getCategoryColor, getCategoryIcon } = useCategories();
   
   // Category management state
   const [showAddCategory, setShowAddCategory] = useState(false);
@@ -117,7 +117,7 @@ export default function SettingsScreen() {
     removeCategory(category);
   };
 
-  const renderDialog = (visible, title, content, onDismiss) => {
+  const renderDialog = (visible, title, content, onDismiss, dialogCategory) => {
     return (
       <RNModal
         visible={visible}
@@ -127,9 +127,17 @@ export default function SettingsScreen() {
       >
         <View style={styles.modalOverlay}>
           <Surface style={[styles.dialogContainer, { backgroundColor: colors.surface }]} elevation={5}>
-            <Text variant="titleLarge" style={[styles.dialogTitle, { color: colors.text }]}>
-              {title}
-            </Text>
+            <View style={styles.dialogHeader}>
+              <MaterialCommunityIcons
+                name={dialogCategory ? getCategoryIcon(dialogCategory) : 'tag-plus'}
+                size={24}
+                color={colors.primary}
+                style={styles.dialogIcon}
+              />
+              <Text variant="titleLarge" style={[styles.dialogTitle, { color: colors.text }]}>
+                {title}
+              </Text>
+            </View>
             {content}
           </Surface>
         </View>
@@ -154,7 +162,8 @@ export default function SettingsScreen() {
           <Button onPress={handleAddCategory}>{t('add')}</Button>
         </View>
       </View>,
-      () => setShowAddCategory(false)
+      () => setShowAddCategory(false),
+      newCategory
     );
   };
 
@@ -175,7 +184,8 @@ export default function SettingsScreen() {
           <Button onPress={handleEditCategory}>{t('update')}</Button>
         </View>
       </View>,
-      () => setShowEditCategory(false)
+      () => setShowEditCategory(false),
+      editedCategory
     );
   };
 
@@ -386,12 +396,11 @@ export default function SettingsScreen() {
                   title={category}
                   left={props => (
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <View style={[styles.categoryColor, { backgroundColor: getCategoryColor(category) }]} />
                       <MaterialCommunityIcons
-                        name="tag"
+                        name={getCategoryIcon(category)}
                         size={24}
                         color={getCategoryColor(category)}
-                        style={[props.style, { marginLeft: 8 }]}
+                        style={props.style}
                       />
                     </View>
                   )}
@@ -571,5 +580,13 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
+  },
+  dialogHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  dialogIcon: {
+    marginRight: 8,
   },
 });

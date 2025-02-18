@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Animated } from 'react-native';
+import { View, StyleSheet, ScrollView, Animated, Platform } from 'react-native';
 import { TextInput, Button, Switch, Text, HelperText, useTheme, SegmentedButtons, Menu } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTransactions } from '../context/TransactionsContext';
@@ -57,7 +57,7 @@ export default function AddTransactionScreen() {
   const initialValuesRef = React.useRef(null);
   
   const { dispatch, selectedCurrency } = useTransactions();
-  const { categories, addCategory } = useCategories();
+  const { categories, addCategory, getCategoryIcon } = useCategories();
   const theme = useTheme();
   const { colors } = theme;
   const { t } = useLanguage();
@@ -215,17 +215,31 @@ export default function AddTransactionScreen() {
                     <TextInput.Icon 
                       icon={() => (
                         <MaterialCommunityIcons
-                          name="menu-down"
+                          name={category ? getCategoryIcon(category) : "menu-down"}
                           size={24}
                           color={colors.primary}
                         />
                       )}
                       onPress={() => setShowCategoryMenu(true)}
+                      forceTextInputFocus={false}
                     />
                   }
-                  onPressIn={() => setShowCategoryMenu(true)}
+                  onPressIn={() => {
+                    if (Platform.OS === 'web') {
+                      setShowCategoryMenu(true);
+                    }
+                  }}
+                  showSoftInputOnFocus={false}
+                  caretHidden={true}
                 />
               }
+              contentStyle={Platform.select({
+                web: {
+                  maxHeight: 300,
+                  overflowY: 'auto'
+                },
+                default: {}
+              })}
             >
               {categories.map((cat) => (
                 <Menu.Item
@@ -236,6 +250,20 @@ export default function AddTransactionScreen() {
                     setErrors({ ...errors, category: '' });
                   }}
                   title={cat}
+                  leadingIcon={() => (
+                    <MaterialCommunityIcons
+                      name={getCategoryIcon(cat)}
+                      size={24}
+                      color={colors.primary}
+                    />
+                  )}
+                  style={Platform.select({
+                    web: {
+                      minHeight: 48,
+                      justifyContent: 'center'
+                    },
+                    default: {}
+                  })}
                 />
               ))}
             </Menu>
