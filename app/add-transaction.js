@@ -253,31 +253,55 @@ export default function AddTransactionScreen() {
                 default: {}
               })}
             >
-              {categories.map((cat) => (
-                <Menu.Item
-                  key={cat}
-                  onPress={() => {
-                    setCategory(cat);
-                    setShowCategoryMenu(false);
-                    setErrors({ ...errors, category: '' });
-                  }}
-                  title={cat}
-                  leadingIcon={() => (
-                    <MaterialCommunityIcons
-                      name={getCategoryIcon(cat)}
-                      size={24}
-                      color={getCategoryColor(cat)}
+              {Platform.OS === 'web' ? (
+                <ScrollView style={{ maxHeight: 300 }}>
+                  {categories.map((cat) => (
+                    <Menu.Item
+                      key={cat}
+                      onPress={() => {
+                        setCategory(cat);
+                        setShowCategoryMenu(false);
+                        setErrors({ ...errors, category: '' });
+                      }}
+                      title={cat}
+                      leadingIcon={() => (
+                        <MaterialCommunityIcons
+                          name={getCategoryIcon(cat)}
+                          size={24}
+                          color={getCategoryColor(cat)}
+                        />
+                      )}
+                      style={{
+                        minHeight: 48,
+                        justifyContent: 'center'
+                      }}
                     />
-                  )}
-                  style={Platform.select({
-                    web: {
+                  ))}
+                </ScrollView>
+              ) : (
+                categories.map((cat) => (
+                  <Menu.Item
+                    key={cat}
+                    onPress={() => {
+                      setCategory(cat);
+                      setShowCategoryMenu(false);
+                      setErrors({ ...errors, category: '' });
+                    }}
+                    title={cat}
+                    leadingIcon={() => (
+                      <MaterialCommunityIcons
+                        name={getCategoryIcon(cat)}
+                        size={24}
+                        color={getCategoryColor(cat)}
+                      />
+                    )}
+                    style={{
                       minHeight: 48,
                       justifyContent: 'center'
-                    },
-                    default: {}
-                  })}
-                />
-              ))}
+                    }}
+                  />
+                ))
+              )}
             </Menu>
           </View>
           <HelperText type="error" visible={!!errors.category}>
