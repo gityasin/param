@@ -241,8 +241,7 @@ export default function AddTransactionScreen() {
                       setShowCategoryMenu(true);
                     }
                   }}
-                  showSoftInputOnFocus={false}
-                  caretHidden={true}
+                  showSoftInputOnFocus={Platform.OS === 'web'}
                 />
               }
               contentStyle={Platform.select({
