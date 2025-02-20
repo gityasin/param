@@ -25,8 +25,8 @@ export default function TabLayout() {
             backgroundColor: colors.surface,
             borderTopColor: colors.border,
             borderTopWidth: 1,
-            height: Platform.OS === 'ios' ? 85 : 60,
-            paddingBottom: Platform.OS === 'ios' ? 25 : 0,
+            height: Platform.OS === 'ios' ? 60 : 50, // Reduced height since we don't show labels
+            paddingBottom: Platform.OS === 'ios' ? 10 : 0,
             paddingTop: 8,
             shadowColor: '#000',
             shadowOffset: { width: 0, height: -2 },
@@ -35,20 +35,15 @@ export default function TabLayout() {
             elevation: 8,
             zIndex: 1000,
           },
+          tabBarShowLabel: false, // Hide labels
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textSecondary,
-          tabBarLabelStyle: {
-            fontSize: 12,
-            fontWeight: '500',
-            paddingBottom: Platform.OS === 'android' ? 4 : 0,
-          },
         }}
       >
         <Tabs.Screen
           name="index"
           options={{
             title: 'PARAM',
-            tabBarLabel: t('tabHome'),
             tabBarIcon: ({ color, size }) => (
               <MaterialCommunityIcons name="home" size={size} color={color} />
             ),
@@ -58,7 +53,6 @@ export default function TabLayout() {
           name="charts"
           options={{
             title: t('tabCharts'),
-            tabBarLabel: t('tabCharts'),
             tabBarIcon: ({ color, size }) => (
               <MaterialCommunityIcons name="chart-bar" size={size} color={color} />
             ),
@@ -68,7 +62,6 @@ export default function TabLayout() {
           name="settings"
           options={{
             title: t('tabSettings'),
-            tabBarLabel: t('tabSettings'),
             tabBarIcon: ({ color, size }) => (
               <MaterialCommunityIcons name="cog" size={size} color={color} />
             ),

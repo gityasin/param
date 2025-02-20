@@ -283,7 +283,7 @@ export default function SettingsScreen() {
           <Text variant="titleLarge" style={[styles.sectionTitle, { color: colors.text }]}>
             {t('appSettings')}
           </Text>
-          <List.Section>
+          <List.Section style={styles.listSection}>
             <List.Item
               title={t('darkMode')}
               description={t('darkModeDesc')}
@@ -380,16 +380,18 @@ export default function SettingsScreen() {
         {/* Categories Section */}
         <Surface style={[styles.surface, { backgroundColor: colors.surface }]} elevation={1}>
           <View style={styles.sectionHeader}>
-            <Text variant="titleLarge" style={[styles.sectionTitle, { color: colors.text }]}>
+            <Text variant="titleLarge" style={{ color: colors.text }}>
               {t('categories')}
             </Text>
             <IconButton
-              icon="plus"
-              mode="contained"
+              icon="plus-thick"
+              size={24}
+              iconColor={colors.primary}
+              style={styles.categoryAddButton}
               onPress={() => setShowAddCategory(true)}
             />
           </View>
-          <List.Section>
+          <List.Section style={styles.listSection}>
             {categories.map((category) => (
               <React.Fragment key={category}>
                 <List.Item
@@ -434,7 +436,7 @@ export default function SettingsScreen() {
           <Text variant="titleLarge" style={[styles.sectionTitle, { color: colors.text }]}>
             {t('about')}
           </Text>
-          <List.Section>
+          <List.Section style={styles.listSection}>
             <List.Item
               title={t('version')}
               description="1.0.0"
@@ -512,17 +514,28 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   sectionTitle: {
-    marginBottom: 16,
+    marginBottom: 12, // Changed from 16 to 12 pixels
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingRight: 8,
+    paddingRight: 13, // Remove right padding since IconButton has its own margin
+    marginBottom: 8, // Add bottom margin to match other sections
+    height: 32, // Set a fixed height to ensure vertical centering
+  },
+  categoryAddButton: {
+    margin: 0, // Remove default margin to align with title
+    alignSelf: 'center', // Ensure vertical centering
+    top: 1, // Slight vertical adjustment to perfectly center with text
+  },
+  listSection: {
+    marginTop: 0, // Added to remove extra space at the top of List.Section
   },
   categoryActions: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginRight: -14, // Increased from -12 to -16 to move icons further right
   },
   modalOverlay: {
     flex: 1,
