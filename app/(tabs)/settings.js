@@ -192,7 +192,7 @@ export default function SettingsScreen() {
   const renderCurrencySelector = () => {
     return renderDialog(
       showCurrencySelector,
-      'Select Currency',
+      t('currencyFormat'),
       <View>
         <ScrollView style={styles.currencyList}>
           {currencies.map((currency) => (
@@ -221,7 +221,7 @@ export default function SettingsScreen() {
           onPress={() => setShowCurrencySelector(false)}
           style={styles.dialogCloseButton}
         >
-          Close
+          {t('close')}
         </Button>
       </View>,
       () => setShowCurrencySelector(false)
@@ -331,7 +331,7 @@ export default function SettingsScreen() {
             <Divider />
 
             <List.Item
-              title={t('currency')}
+              title={t('currencyFormat')}
               description={selectedCurrencyDetails ? selectedCurrencyDetails.label : ''}
               left={props => (
                 <MaterialCommunityIcons
@@ -391,11 +391,12 @@ export default function SettingsScreen() {
               onPress={() => setShowAddCategory(true)}
             />
           </View>
-          <List.Section style={styles.listSection}>
-            {categories.map((category) => (
+          <List.Section style={[styles.listSection, styles.compactList]}>
+            {categories.map((category, index) => (
               <React.Fragment key={category}>
                 <List.Item
                   title={category}
+                  style={styles.compactListItem}
                   left={props => (
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <MaterialCommunityIcons
@@ -411,6 +412,7 @@ export default function SettingsScreen() {
                       <IconButton
                         icon="pencil"
                         size={20}
+                        style={styles.compactIconButton}
                         onPress={() => {
                           setSelectedCategory(category);
                           setEditedCategory(category);
@@ -420,12 +422,13 @@ export default function SettingsScreen() {
                       <IconButton
                         icon="delete"
                         size={20}
+                        style={styles.compactIconButton}
                         onPress={() => handleDeleteCategory(category)}
                       />
                     </View>
                   )}
                 />
-                <Divider />
+                {index < categories.length - 1 && <Divider />}
               </React.Fragment>
             ))}
           </List.Section>
@@ -511,31 +514,36 @@ const styles = StyleSheet.create({
   surface: {
     margin: 16,
     borderRadius: 8,
-    padding: 16,
+    paddingHorizontal: 0, // Remove horizontal padding from surface as List.Item has its own padding
+    paddingTop: 16,
+    paddingBottom: 8,
   },
   sectionTitle: {
-    marginBottom: 12, // Changed from 16 to 12 pixels
+    marginBottom: 12,
+    paddingHorizontal: 16, // Add padding to section titles to match List.Items
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingRight: 13, // Remove right padding since IconButton has its own margin
-    marginBottom: 8, // Add bottom margin to match other sections
-    height: 32, // Set a fixed height to ensure vertical centering
+    paddingHorizontal: 16, // Add consistent padding
+    marginBottom: 8,
+    height: 32,
   },
   categoryAddButton: {
     margin: 0, // Remove default margin to align with title
     alignSelf: 'center', // Ensure vertical centering
     top: 1, // Slight vertical adjustment to perfectly center with text
+    left: 2, // Move 3 pixels to the right
   },
   listSection: {
     marginTop: 0, // Added to remove extra space at the top of List.Section
+    marginBottom: 0, // Added to remove extra space at the bottom
   },
   categoryActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: -14, // Increased from -12 to -16 to move icons further right
+    marginRight: -8, // Adjust to account for IconButton padding
   },
   modalOverlay: {
     flex: 1,
@@ -601,5 +609,15 @@ const styles = StyleSheet.create({
   },
   dialogIcon: {
     marginRight: 8,
+  },
+  compactList: {
+    paddingVertical: 0,
+  },
+  compactListItem: {
+    paddingVertical: 4,
+  },
+  compactIconButton: {
+    margin: 0,
+    padding: 8,
   },
 });
