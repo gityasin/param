@@ -253,7 +253,13 @@ export default function AddTransactionScreen() {
               })}
             >
               {Platform.OS === 'web' ? (
-                <ScrollView style={{ maxHeight: 300 }}>
+                <ScrollView style={[
+                  { maxHeight: 300 },
+                  Platform.OS === 'web' && {
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: `${colors.primary} ${colors.surfaceVariant}`,
+                  }
+                ]}>
                   {categories.map((cat) => (
                     <Menu.Item
                       key={cat}
