@@ -51,6 +51,46 @@ const CustomSnackbar = ({ visible, message, style }) => {
   );
 };
 
+const GhostTextInput = ({ value, suggestion, onChangeText, ...props }) => {
+  const theme = useTheme();
+  return (
+    <View style={{ flex: 1 }}>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        {...props}
+      />
+      {suggestion && value && suggestion.toLowerCase() !== value.toLowerCase() && (
+        <View 
+          pointerEvents="none" 
+          style={{ 
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+          }}
+        >
+          <TextInput
+            value={value + suggestion.slice(value.length)}
+            editable={false}
+            style={[
+              props.style,
+              {
+                backgroundColor: 'transparent',
+                color: theme.colors.placeholder,
+                opacity: 0.5,
+              }
+            ]}
+            mode={props.mode}
+            label={props.label}
+          />
+        </View>
+      )}
+    </View>
+  );
+};
+
 export default function AddTransactionScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -68,11 +108,13 @@ export default function AddTransactionScreen() {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
+  const [suggestion, setSuggestion] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [transactionType, setTransactionType] = useState('expense');
   const [errors, setErrors] = useState({});
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
+  const [isEditable, setIsEditable] = useState(true);
 
   useEffect(() => {
     if (isEditing && existingTransaction && !initialValuesRef.current) {
@@ -113,7 +155,11 @@ export default function AddTransactionScreen() {
     const finalAmount = transactionType === 'expense' ? -parsedAmount : parsedAmount;
     const trimmedCategory = category.trim();
 
-    if (trimmedCategory && !categories.includes(trimmedCategory)) {
+    // Find existing category with case-insensitive match
+    const existingCategory = categories.find(cat => cat.toLowerCase() === trimmedCategory.toLowerCase());
+    const finalCategory = existingCategory || trimmedCategory;
+
+    if (!existingCategory && trimmedCategory) {
       await addCategory(trimmedCategory);
     }
 
@@ -121,7 +167,7 @@ export default function AddTransactionScreen() {
       description: description.trim(),
       amount: finalAmount,
       date: isEditing ? initialValuesRef.current.date : new Date().toISOString().split('T')[0],
-      category: trimmedCategory,
+      category: finalCategory,
       isRecurring,
       type: transactionType,
     };
@@ -153,9 +199,31 @@ export default function AddTransactionScreen() {
     }, 750);
   };
 
+  const handleCategoryIconPress = () => {
+    if (!isEditable) {
+      setIsEditable(true);
+    } else {
+      // Add a small delay before opening the menu
+      setTimeout(() => {
+        setShowCategoryMenu(true);
+      }, 150); // 150ms delay for a smooth interaction
+    }
+  };
+
   return (
     <>
-      <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+      <ScrollView 
+        style={[
+          styles.container,
+          Platform.OS === 'web' && {
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(0,0,0,0.3) transparent',
+            WebkitOverflowScrolling: 'touch',
+            msOverflowStyle: '-ms-autohiding-scrollbar',
+          }
+        ]}
+        contentContainerStyle={styles.contentContainer}
+      >
         <View style={styles.content}>
           <SegmentedButtons
             value={transactionType}
@@ -213,51 +281,89 @@ export default function AddTransactionScreen() {
               visible={showCategoryMenu}
               onDismiss={() => setShowCategoryMenu(false)}
               anchor={
-                <TextInput
+                <GhostTextInput
                   mode="outlined"
                   label={t('category')}
                   value={category}
+                  suggestion={suggestion}
                   onChangeText={(text) => {
                     setCategory(text);
+                    setIsEditable(true);
                     setErrors({ ...errors, category: '' });
+                    // Handle autocomplete suggestions
+                    if (text.length >= 2) {
+                      const matches = categories.filter(cat => 
+                        cat.toLowerCase().startsWith(text.toLowerCase()) && 
+                        cat.toLowerCase() !== text.toLowerCase()
+                      );
+                      if (matches.length > 0) {
+                        setSuggestion(matches[0]);
+                      } else {
+                        setSuggestion('');
+                      }
+                    } else {
+                      setSuggestion('');
+                    }
+                  }}
+                  onKeyPress={({ nativeEvent }) => {
+                    if ((nativeEvent.key === 'Enter' || nativeEvent.key === 'Tab') && suggestion) {
+                      // Use the exact casing of the matched category
+                      const matchedCategory = categories.find(cat => cat.toLowerCase() === suggestion.toLowerCase());
+                      setCategory(matchedCategory || suggestion);
+                      setSuggestion('');
+                      // Prevent default tab behavior
+                      if (nativeEvent.key === 'Tab') {
+                        nativeEvent.preventDefault?.();
+                      }
+                    }
                   }}
                   error={!!errors.category}
-                  style={[styles.input, { flex: 1 }]}
+                  style={[styles.input, { flex: 1, backgroundColor: colors.background }]}
+                  editable={isEditable}
+                  theme={theme}
                   right={
                     <TextInput.Icon 
                       icon={() => (
-                        <MaterialCommunityIcons
-                          name={category ? getCategoryIcon(category) : "menu-down"}
-                          size={24}
-                          color={category ? getCategoryColor(category) : colors.primary}
-                        />
+                        <View style={{ width: 24, alignItems: 'center' }}>
+                          <MaterialCommunityIcons
+                            name={!isEditable ? "pencil" : (category ? getCategoryIcon(category) : "menu-down")}
+                            size={24}
+                            color={category ? getCategoryColor(category) : colors.primary}
+                          />
+                        </View>
                       )}
-                      onPress={() => setShowCategoryMenu(true)}
+                      onPress={handleCategoryIconPress}
                       forceTextInputFocus={false}
                     />
                   }
-                  onPressIn={() => {
-                    if (Platform.OS === 'web') {
-                      setShowCategoryMenu(true);
-                    }
-                  }}
-                  showSoftInputOnFocus={Platform.OS === 'web'}
                 />
               }
-              contentStyle={Platform.select({
-                web: {
-                  maxHeight: 300,
-                  overflowY: 'auto'
-                },
-                default: {}
-              })}
+              contentStyle={[
+                Platform.select({
+                  web: {
+                    maxHeight: '50vh', // Use viewport height instead of fixed pixels
+                    overflowY: 'auto'
+                  },
+                  default: {
+                    maxHeight: '70%' // Use percentage of screen height on mobile
+                  }
+                }),
+                { marginTop: 4 }
+              ]}
+              style={{ 
+                alignItems: 'flex-end',
+                justifyContent: 'flex-end',
+                right: 0
+              }}
             >
               {Platform.OS === 'web' ? (
                 <ScrollView style={[
-                  { maxHeight: 300 },
-                  Platform.OS === 'web' && {
+                  styles.webCategoryList,
+                  {
                     scrollbarWidth: 'thin',
-                    scrollbarColor: `${colors.primary} ${colors.surfaceVariant}`,
+                    scrollbarColor: 'rgba(0,0,0,0.3) transparent',
+                    WebkitOverflowScrolling: 'touch',
+                    msOverflowStyle: '-ms-autohiding-scrollbar',
                   }
                 ]}>
                   {categories.map((cat) => (
@@ -266,6 +372,8 @@ export default function AddTransactionScreen() {
                       onPress={() => {
                         setCategory(cat);
                         setShowCategoryMenu(false);
+                        setSuggestion('');
+                        setIsEditable(false);
                         setErrors({ ...errors, category: '' });
                       }}
                       title={cat}
@@ -357,6 +465,7 @@ const styles = StyleSheet.create({
   },
   categoryInputContainer: {
     marginBottom: 4,
+    position: 'relative'
   },
   switchContainer: {
     flexDirection: 'row',
@@ -383,5 +492,9 @@ const styles = StyleSheet.create({
   snackbarText: {
     color: 'white',
     textAlign: 'center',
+  },
+  webCategoryList: {
+    maxHeight: '50vh',
+    overflow: 'auto',
   },
 });

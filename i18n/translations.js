@@ -34,6 +34,9 @@ export const translations = {
     addNewCategory: 'Add New Category',
     editCategory: 'Edit Category',
     categoryName: 'Category Name',
+    deleteCategory: 'Delete Category',
+    deleteCategoryConfirm: 'Confirm deleting',
+    editCategoryStyle: 'Category Style',
     language: 'Language',
     languageDesc: 'Change application language',
     
@@ -102,6 +105,26 @@ export const translations = {
     // Notification Messages
     notificationPermissionRequired: 'Notification permission is required to enable reminders',
     notificationError: 'There was an error managing notifications. Please try again.',
+
+    // Colors and Icons
+    colors: 'Colors',
+    icons: 'Icons',
+    
+    // Icon Categories
+    iconCatBasic: 'Basic',
+    iconCatFinance: 'Finance',
+    iconCatBills: 'Bills & Payments',
+    iconCatFood: 'Food & Drink',
+    iconCatTransport: 'Transportation',
+    iconCatShopping: 'Shopping & Retail',
+    iconCatHouse: 'House & Utilities',
+    iconCatHealth: 'Health & Wellness',
+    iconCatTech: 'Technology',
+    iconCatEntertainment: 'Entertainment',
+    iconCatEducation: 'Education',
+    iconCatTravel: 'Travel & Outdoors',
+    iconCatFamily: 'Family & Personal',
+    iconCatServices: 'Services & Maintenance',
   },
   tr: {
     // General
@@ -138,6 +161,9 @@ export const translations = {
     addNewCategory: 'Yeni Kategori Ekle',
     editCategory: 'Kategori Düzenle',
     categoryName: 'Kategori Adı',
+    deleteCategory: 'Kategori Sil',
+    deleteCategoryConfirm: 'Kategoriyi silmeyi onayla',
+    editCategoryStyle: 'Kategori Stili',
     language: 'Dil',
     languageDesc: 'Uygulama dilini değiştir',
     
@@ -206,5 +232,25 @@ export const translations = {
     // Notification Messages
     notificationPermissionRequired: 'Hatırlatıcıları etkinleştirmek için bildirim izni gerekli',
     notificationError: 'Bildirimleri yönetirken bir hata oluştu. Lütfen tekrar deneyin.',
+
+    // Colors and Icons
+    colors: 'Renkler',
+    icons: 'Simgeler',
+    
+    // Icon Categories
+    iconCatBasic: 'Temel',
+    iconCatFinance: 'Finans',
+    iconCatBills: 'Faturalar & Ödemeler',
+    iconCatFood: 'Yeme & İçme',
+    iconCatTransport: 'Ulaşım',
+    iconCatShopping: 'Alışveriş',
+    iconCatHouse: 'Ev & Faturalar',
+    iconCatHealth: 'Sağlık & Zindelik',
+    iconCatTech: 'Teknoloji',
+    iconCatEntertainment: 'Eğlence',
+    iconCatEducation: 'Eğitim',
+    iconCatTravel: 'Seyahat & Dış Mekan',
+    iconCatFamily: 'Aile & Kişisel',
+    iconCatServices: 'Hizmetler & Bakım',
   }
 };

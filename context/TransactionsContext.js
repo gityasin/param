@@ -11,22 +11,43 @@ function transactionsReducer(state, action) {
 
   switch (action.type) {
     case 'SET_TRANSACTIONS':
-      console.log("Setting transactions:", action.payload);
-      return { ...state, transactions: action.payload };
+      // Case-insensitive category normalization when loading transactions
+      const normalizedTransactions = action.payload.map(tx => {
+        if (!tx.category) return tx;
+        // Find matching category with proper casing
+        const matchingCategory = state.transactions.find(t => 
+          t.category && t.category.toLowerCase() === tx.category.toLowerCase()
+        );
+        return {
+          ...tx,
+          category: matchingCategory?.category || tx.category
+        };
+      });
+      return { ...state, transactions: normalizedTransactions };
+
     case 'ADD_TRANSACTION':
-      console.log("Adding transaction:", action.payload);
+      // Case-insensitive category matching for new transactions
+      const existingCategory = state.transactions.find(tx => 
+        tx.category && tx.category.toLowerCase() === action.payload.category.toLowerCase()
+      );
       return { 
         ...state, 
         transactions: [...state.transactions, {
           ...action.payload,
+          category: existingCategory?.category || action.payload.category,
           isRecurring: Boolean(action.payload.isRecurring)
         }] 
       };
+
     case 'UPDATE_TRANSACTION':
-      console.log("Updating transaction:", action.payload);
+      // Case-insensitive category matching when updating
+      const updatedExistingCategory = state.transactions.find(tx => 
+        tx.category && tx.category.toLowerCase() === action.payload.category.toLowerCase()
+      );
       const updatedTransactions = state.transactions.map(tx =>
         tx.id === action.payload.id ? {
           ...action.payload,
+          category: updatedExistingCategory?.category || action.payload.category,
           isRecurring: Boolean(action.payload.isRecurring)
         } : tx
       );
@@ -35,6 +56,7 @@ function transactionsReducer(state, action) {
         ...state,
         transactions: updatedTransactions,
       };
+
     case 'DELETE_TRANSACTION':
       console.log("Deleting transaction with ID:", action.payload);
       return {

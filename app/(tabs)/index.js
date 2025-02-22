@@ -93,6 +93,12 @@ export default function HomeScreen() {
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmptyList}
         contentContainerStyle={styles.listContent}
+        style={Platform.OS === 'web' ? {
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(0,0,0,0.3) transparent',
+          WebkitOverflowScrolling: 'touch',
+          msOverflowStyle: '-ms-autohiding-scrollbar',
+        } : undefined}
       />
 
       <FAB

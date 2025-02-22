@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Dimensions, Platform } from 'react-native';
+import { View, StyleSheet, ScrollView, Dimensions, Platform, TouchableWithoutFeedback } from 'react-native';
 import { Text, Surface, useTheme, SegmentedButtons } from 'react-native-paper';
-import { VictoryPie } from 'victory-native';
+import { VictoryPie, VictoryLabel, VictoryContainer, createContainer } from 'victory-native';
 import { useTransactions } from '../../context/TransactionsContext';
 import { formatCurrency } from '../../services/format';
 import { useLanguage } from '../../context/LanguageContext';
@@ -19,27 +19,55 @@ export default function ChartScreen() {
   const { t } = useLanguage();
   const { getCategoryColor } = useCategories();
   const [chartType, setChartType] = useState('pie');
+  const [activeIndex, setActiveIndex] = useState(null);
+  const [selectedSegment, setSelectedSegment] = useState(null);
 
   // Calculate total expenses and group by category
   const expensesByCategory = state.transactions
     .filter(tx => tx.amount < 0)
     .reduce((acc, tx) => {
       const category = tx.category || 'Other';
-      acc[category] = (acc[category] || 0) + Math.abs(tx.amount);
+      // Find matching category with correct casing
+      const existingCategory = Object.keys(acc).find(key => key.toLowerCase() === category.toLowerCase());
+      const finalCategory = existingCategory || category;
+      acc[finalCategory] = (acc[finalCategory] || 0) + Math.abs(tx.amount);
       return acc;
     }, {});
 
-  const sortedChartData = Object.entries(expensesByCategory)
-    .sort(([, a], [, b]) => b - a)
-    .map(([category, amount]) => ({
-      x: category,
-      y: amount,
-      originalAmount: amount,
-      color: getCategoryColor(category)
-    }));
+  // Sort and process chart data, grouping small segments
+  const SMALL_SEGMENT_THRESHOLD = 0.03; // 3% threshold
+  const sortedEntries = Object.entries(expensesByCategory)
+    .sort(([, a], [, b]) => b - a);
+  
+  const total = sortedEntries.reduce((sum, [, amount]) => sum + amount, 0);
+  
+  const chartData = sortedEntries.reduce((acc, [category, amount]) => {
+    const percentage = amount / total;
+    if (percentage < SMALL_SEGMENT_THRESHOLD) {
+      acc.smallSegments.amount += amount;
+      acc.smallSegments.categories.push(category);
+    } else {
+      acc.mainSegments.push({
+        x: category,
+        y: amount,
+        originalAmount: amount,
+        color: getCategoryColor(category),
+        label: `${category}\n${((amount / total) * 100).toFixed(1)}%`
+      });
+    }
+    return acc;
+  }, { mainSegments: [], smallSegments: { amount: 0, categories: [] } });
 
-  // Use originalAmount for total and percentage calculations
-  const total = sortedChartData.reduce((sum, item) => sum + item.originalAmount, 0);
+  // Add "Other" category if we have small segments
+  const sortedChartData = chartData.smallSegments.amount > 0 
+    ? [...chartData.mainSegments, {
+        x: 'Other',
+        y: chartData.smallSegments.amount,
+        originalAmount: chartData.smallSegments.amount,
+        color: getCategoryColor('Other'),
+        label: `Other\n${((chartData.smallSegments.amount / total) * 100).toFixed(1)}%`
+      }]
+    : chartData.mainSegments;
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
@@ -92,11 +120,21 @@ export default function ChartScreen() {
     );
   };
 
+  const VictoryZoomVoronoiContainer = createContainer("zoom", "voronoi");
+
   return (
     <ScrollView 
-      style={[styles.container, { backgroundColor: colors.background }]}
+      style={[
+        styles.container, 
+        { backgroundColor: colors.background },
+        Platform.OS === 'web' && {
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(0,0,0,0.3) transparent',
+          WebkitOverflowScrolling: 'touch',
+          msOverflowStyle: '-ms-autohiding-scrollbar',
+        }
+      ]}
       contentContainerStyle={styles.contentContainer}
-      showsVerticalScrollIndicator={false}
     >
       <Text variant="headlineMedium" style={[styles.title, { color: colors.text, textAlign: 'center', width: '100%' }]}>
         {t('expenseBreakdown')}
@@ -120,27 +158,55 @@ export default function ChartScreen() {
         {total > 0 ? (
           <>
             <View style={styles.chartWrapper}>
+              {selectedSegment && (
+                <View style={[styles.selectedSegmentInfo, { backgroundColor: colors.surface }]}>
+                  <Text style={[styles.selectedSegmentText, { color: colors.text }]}>
+                    {selectedSegment.x}
+                  </Text>
+                  <Text style={[styles.selectedSegmentText, { color: colors.text }]}>
+                    {((selectedSegment.y / total) * 100).toFixed(1)}%
+                  </Text>
+                  <Text style={[styles.selectedSegmentText, { color: colors.error }]}>
+                    {formatCurrency(selectedSegment.y, selectedCurrency)}
+                  </Text>
+                </View>
+              )}
+              
               <VictoryPie
                 data={sortedChartData}
                 colorScale={sortedChartData.map(item => item.color)}
                 innerRadius={chartType === 'donut' ? 65 : 0}
                 radius={120}
                 padAngle={sortedChartData.length > 1 ? 1 : 0}
-                cornerRadius={0}
-                labels={() => null}
+                cornerRadius={4}
+                labelComponent={<VictoryLabel text={""} />}
+                events={[{
+                  target: "data",
+                  eventHandlers: {
+                    onClick: () => [{
+                      target: "data",
+                      mutation: (props) => {
+                        const segment = sortedChartData[props.index];
+                        const isCurrentlySelected = selectedSegment?.x === segment.x;
+                        setSelectedSegment(isCurrentlySelected ? null : segment);
+                        return null; // Don't modify the segment style
+                      }
+                    }]
+                  }
+                }]}
                 animate={{
                   duration: 400,
                   easing: "quadInOut",
                   onLoad: { duration: 400 }
                 }}
-                height={260}
-                width={260}
+                height={300}
+                width={300}
+                padding={30}
                 style={{
                   data: {
                     stroke: colors.background,
-                    strokeWidth: 2,
-                    fillOpacity: 1
-                  },
+                    strokeWidth: 2
+                  }
                 }}
               />
             </View>
@@ -257,5 +323,36 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 260,
     overflow: 'hidden'
+  },
+  chartTouchable: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedSegmentInfo: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: -75 }, { translateY: -30 }],
+    width: 150,
+    padding: 8,
+    borderRadius: 8,
+    zIndex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  selectedSegmentText: {
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

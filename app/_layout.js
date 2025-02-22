@@ -14,11 +14,21 @@ function RootLayoutContent() {
   const { theme, isDarkMode } = useAppTheme();
   const router = useRouter();
   const segments = useSegments();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     checkOnboarding();
   }, []);
+
+  useEffect(() => {
+    // Set HTML lang attribute when language changes
+    if (Platform.OS === 'web') {
+      document.documentElement.lang = language;
+      document.documentElement.setAttribute('xml:lang', language);
+      document.documentElement.setAttribute('content-language', language);
+      document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr'; // Future-proofing for RTL languages
+    }
+  }, [language]);
 
   const checkOnboarding = async () => {
     try {

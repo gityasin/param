@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTransactions } from '../../context/TransactionsContext';
 import { useCategories } from '../../context/CategoriesContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { CategoryEditor } from '../../components/CategoryEditor';
 import * as Notifications from 'expo-notifications';
 
 export default function SettingsScreen() {
@@ -29,6 +30,9 @@ export default function SettingsScreen() {
   const [newCategory, setNewCategory] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [editedCategory, setEditedCategory] = useState('');
+  const [showIconEditor, setShowIconEditor] = useState(false);
+  const [categoryToEdit, setCategoryToEdit] = useState(null);
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
 
   // Add useEffect to load notification settings
   useEffect(() => {
@@ -115,6 +119,16 @@ export default function SettingsScreen() {
 
   const handleDeleteCategory = (category) => {
     removeCategory(category);
+    setCategoryToDelete(null);
+  };
+
+  const confirmDeleteCategory = (category) => {
+    setCategoryToDelete(category);
+  };
+
+  const handleEditIconAndColor = (category) => {
+    setCategoryToEdit(category);
+    setShowIconEditor(true);
   };
 
   const renderDialog = (visible, title, content, onDismiss, dialogCategory) => {
@@ -194,7 +208,17 @@ export default function SettingsScreen() {
       showCurrencySelector,
       t('currencyFormat'),
       <View>
-        <ScrollView style={styles.currencyList}>
+        <ScrollView 
+          style={[
+            styles.currencyList,
+            Platform.OS === 'web' && {
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'rgba(0,0,0,0.3) transparent',
+              WebkitOverflowScrolling: 'touch',
+              msOverflowStyle: '-ms-autohiding-scrollbar',
+            }
+          ]}
+        >
           {currencies.map((currency) => (
             <TouchableOpacity
               key={currency.code}
@@ -238,7 +262,17 @@ export default function SettingsScreen() {
       showLanguageSelector,
       t('language'),
       <View>
-        <ScrollView style={styles.languageList}>
+        <ScrollView 
+          style={[
+            styles.languageList,
+            Platform.OS === 'web' && {
+              scrollbarWidth: 'thin',
+              scrollbarColor: `${colors.primary} ${colors.surfaceVariant}`,
+              WebkitOverflowScrolling: 'touch',
+              msOverflowStyle: '-ms-autohiding-scrollbar',
+            }
+          ]}
+        >
           {languages.map((lang) => (
             <TouchableOpacity
               key={lang.code}
@@ -275,9 +309,105 @@ export default function SettingsScreen() {
     );
   };
 
+  const renderCategorySelector = () => {
+    // Sort categories alphabetically for display
+    const sortedCategories = [...categories].sort((a, b) => a.localeCompare(b));
+
+    return (
+      <Surface style={[styles.surface, { backgroundColor: colors.surface }]} elevation={1}>
+        <View style={styles.sectionHeader}>
+          <Text variant="titleLarge" style={{ color: colors.text }}>
+            {t('categories')}
+          </Text>
+          <IconButton
+            icon="plus-thick"
+            size={24}
+            iconColor={colors.primary}
+            style={styles.categoryAddButton}
+            onPress={() => setShowAddCategory(true)}
+          />
+        </View>
+        <List.Section style={[styles.listSection, styles.compactList]}>
+          {[...categories].sort((a, b) => a.localeCompare(b)).map((category, index) => (
+            <React.Fragment key={category}>
+              <List.Item
+                title={category}
+                style={styles.compactListItem}
+                left={props => (
+                  <TouchableOpacity 
+                    onPress={() => handleEditIconAndColor(category)}
+                    style={{ flexDirection: 'row', alignItems: 'center' }}
+                  >
+                    <MaterialCommunityIcons
+                      name={getCategoryIcon(category)}
+                      size={24}
+                      color={getCategoryColor(category)}
+                      style={props.style}
+                    />
+                  </TouchableOpacity>
+                )}
+                right={() => (
+                  <View style={styles.categoryActions}>
+                    <IconButton
+                      icon="pencil"
+                      size={20}
+                      style={styles.compactIconButton}
+                      onPress={() => {
+                        setSelectedCategory(category);
+                        setEditedCategory(category);
+                        setShowEditCategory(true);
+                      }}
+                    />
+                    <IconButton
+                      icon="delete"
+                      size={20}
+                      style={styles.compactIconButton}
+                      onPress={() => confirmDeleteCategory(category)}
+                    />
+                  </View>
+                )}
+              />
+              {index < sortedCategories.length - 1 && <Divider />}
+            </React.Fragment>
+          ))}
+        </List.Section>
+      </Surface>
+    );
+  };
+
+  const renderDeleteConfirmation = () => {
+    return renderDialog(
+      categoryToDelete !== null,
+      t('deleteCategory'),
+      <View>
+        <Text style={{ marginBottom: 16, color: colors.text }}>
+          {t('deleteCategoryConfirm')} "{categoryToDelete}"?
+        </Text>
+        <View style={styles.dialogActions}>
+          <Button onPress={() => setCategoryToDelete(null)}>{t('cancel')}</Button>
+          <Button onPress={() => handleDeleteCategory(categoryToDelete)} textColor={colors.error}>
+            {t('delete')}
+          </Button>
+        </View>
+      </View>,
+      () => setCategoryToDelete(null)
+    );
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView>
+      <ScrollView 
+        style={[
+          styles.container,
+          Platform.OS === 'web' && {
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(0,0,0,0.3) transparent',
+            WebkitOverflowScrolling: 'touch',
+            msOverflowStyle: '-ms-autohiding-scrollbar',
+          }
+        ]}
+        contentContainerStyle={styles.contentContainer}
+      >
         {/* App Settings Section */}
         <Surface style={[styles.surface, { backgroundColor: colors.surface }]} elevation={1}>
           <Text variant="titleLarge" style={[styles.sectionTitle, { color: colors.text }]}>
@@ -378,61 +508,7 @@ export default function SettingsScreen() {
         </Surface>
 
         {/* Categories Section */}
-        <Surface style={[styles.surface, { backgroundColor: colors.surface }]} elevation={1}>
-          <View style={styles.sectionHeader}>
-            <Text variant="titleLarge" style={{ color: colors.text }}>
-              {t('categories')}
-            </Text>
-            <IconButton
-              icon="plus-thick"
-              size={24}
-              iconColor={colors.primary}
-              style={styles.categoryAddButton}
-              onPress={() => setShowAddCategory(true)}
-            />
-          </View>
-          <List.Section style={[styles.listSection, styles.compactList]}>
-            {categories.map((category, index) => (
-              <React.Fragment key={category}>
-                <List.Item
-                  title={category}
-                  style={styles.compactListItem}
-                  left={props => (
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <MaterialCommunityIcons
-                        name={getCategoryIcon(category)}
-                        size={24}
-                        color={getCategoryColor(category)}
-                        style={props.style}
-                      />
-                    </View>
-                  )}
-                  right={() => (
-                    <View style={styles.categoryActions}>
-                      <IconButton
-                        icon="pencil"
-                        size={20}
-                        style={styles.compactIconButton}
-                        onPress={() => {
-                          setSelectedCategory(category);
-                          setEditedCategory(category);
-                          setShowEditCategory(true);
-                        }}
-                      />
-                      <IconButton
-                        icon="delete"
-                        size={20}
-                        style={styles.compactIconButton}
-                        onPress={() => handleDeleteCategory(category)}
-                      />
-                    </View>
-                  )}
-                />
-                {index < categories.length - 1 && <Divider />}
-              </React.Fragment>
-            ))}
-          </List.Section>
-        </Surface>
+        {renderCategorySelector()}
 
         {/* About Section */}
         <Surface style={[styles.surface, { backgroundColor: colors.surface }]} elevation={1}>
@@ -503,6 +579,41 @@ export default function SettingsScreen() {
       {renderEditCategoryDialog()}
       {renderCurrencySelector()}
       {renderLanguageSelector()}
+      {renderDeleteConfirmation()}
+
+      {/* Category Icon Editor Modal */}
+      <RNModal
+        visible={showIconEditor}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowIconEditor(false)}
+      >
+        <View style={[styles.modalOverlay, { margin: 0, padding: 0 }]}>
+          <Surface style={[styles.iconEditorContainer, { backgroundColor: colors.surface }]} elevation={5}>
+            <View style={styles.iconEditorHeader}>
+              <IconButton
+                icon="close"
+                size={24}
+                onPress={() => setShowIconEditor(false)}
+              />
+              <Text variant="titleLarge" style={{ flex: 1, textAlign: 'center' }}>
+                {t('editCategoryStyle')}
+              </Text>
+              <IconButton
+                icon="check"
+                size={24}
+                onPress={() => setShowIconEditor(false)}
+              />
+            </View>
+            {categoryToEdit && (
+              <CategoryEditor
+                category={categoryToEdit}
+                onClose={() => setShowIconEditor(false)}
+              />
+            )}
+          </Surface>
+        </View>
+      </RNModal>
     </View>
   );
 }
@@ -570,6 +681,11 @@ const styles = StyleSheet.create({
   },
   currencyList: {
     maxHeight: 300,
+    overflow: 'auto',
+  },
+  languageList: {
+    maxHeight: 200,
+    overflow: 'auto',
   },
   currencyItem: {
     flexDirection: 'row',
@@ -583,9 +699,6 @@ const styles = StyleSheet.create({
   },
   dialogCloseButton: {
     marginTop: 16,
-  },
-  languageList: {
-    maxHeight: 200,
   },
   languageItem: {
     flexDirection: 'row',
@@ -619,5 +732,18 @@ const styles = StyleSheet.create({
   compactIconButton: {
     margin: 0,
     padding: 8,
+  },
+  iconEditorContainer: {
+    flex: 1,
+    width: '100%',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  iconEditorHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
 });
