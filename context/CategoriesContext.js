@@ -282,10 +282,16 @@ export function CategoriesProvider({ children }) {
     
     const newCategories = [...categories, categoryToAdd];
     
-    // Find first unused color
+    // Get all currently used colors
     const usedColors = Object.values(categoryColors);
-    const availableColor = CATEGORY_COLORS.find(color => !usedColors.includes(color)) 
-      || CATEGORY_COLORS[newCategories.length % CATEGORY_COLORS.length];
+    
+    // Get all unused colors
+    const unusedColors = CATEGORY_COLORS.filter(color => !usedColors.includes(color));
+    
+    // Pick a random unused color, or if all colors are used, pick a random color from all available colors
+    const availableColor = unusedColors.length > 0 
+      ? unusedColors[Math.floor(Math.random() * unusedColors.length)]
+      : CATEGORY_COLORS[Math.floor(Math.random() * CATEGORY_COLORS.length)];
     
     const newColors = {
       ...categoryColors,

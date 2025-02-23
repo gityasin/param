@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Animated, Platform } from 'react-native';
-import { TextInput, Button, Switch, Text, HelperText, useTheme, SegmentedButtons, Menu } from 'react-native-paper';
+import { TextInput, Button, Switch, Text, HelperText, useTheme, SegmentedButtons, Menu, TouchableRipple } from 'react-native-paper';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTransactions } from '../context/TransactionsContext';
 import { useCategories } from '../context/CategoriesContext';
@@ -115,6 +116,8 @@ export default function AddTransactionScreen() {
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
   const [isEditable, setIsEditable] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
     if (isEditing && existingTransaction && !initialValuesRef.current) {
@@ -124,6 +127,7 @@ export default function AddTransactionScreen() {
       setCategory(existingTransaction.category || '');
       setTransactionType(existingTransaction.amount < 0 ? 'expense' : 'income');
       setIsRecurring(Boolean(existingTransaction.isRecurring));
+      setSelectedDate(new Date(existingTransaction.date));
     }
   }, [isEditing, existingTransaction]);
 
@@ -166,7 +170,7 @@ export default function AddTransactionScreen() {
     const transactionData = {
       description: description.trim(),
       amount: finalAmount,
-      date: isEditing ? initialValuesRef.current.date : new Date().toISOString().split('T')[0],
+      date: selectedDate.toISOString().split('T')[0],
       category: finalCategory,
       isRecurring,
       type: transactionType,
@@ -207,6 +211,30 @@ export default function AddTransactionScreen() {
       setTimeout(() => {
         setShowCategoryMenu(true);
       }, 150); // 150ms delay for a smooth interaction
+    }
+  };
+
+  const handleDateChange = (event, date) => {
+    if (Platform.OS === 'web') {
+      // For web, we don't need to manage visibility state
+      if (date) {
+        setSelectedDate(date);
+      }
+      return;
+    }
+
+    // Existing mobile platform handling
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    
+    if (event.type === 'dismissed') {
+      setShowDatePicker(false);
+      return;
+    }
+    
+    if (date) {
+      setSelectedDate(date);
     }
   };
 
@@ -421,6 +449,52 @@ export default function AddTransactionScreen() {
             {errors.category}
           </HelperText>
 
+          <TouchableRipple 
+            onPress={() => setShowDatePicker(true)} 
+            style={[
+              styles.datePickerButton,
+              Platform.OS === 'web' && styles.datePickerButtonWeb
+            ]}
+          >
+            <View style={styles.datePickerContent}>
+              <MaterialCommunityIcons name="calendar" size={24} color={colors.primary} />
+              <Text style={[styles.dateText, { color: colors.text }]}>
+                {selectedDate.toLocaleDateString(undefined, {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </Text>
+              {Platform.OS === 'web' && (
+                <View style={styles.dateInputWrapper}>
+                  <input
+                    type="date"
+                    value={selectedDate.toISOString().split('T')[0]}
+                    onChange={(e) => handleDateChange(e, new Date(e.target.value))}
+                    className="date-input-field"
+                    max={new Date().toISOString().split('T')[0]}
+                  />
+                </View>
+              )}
+            </View>
+          </TouchableRipple>
+
+          {(showDatePicker && Platform.OS !== 'web') && (
+            <DateTimePicker
+              testID="datePicker"
+              value={selectedDate}
+              mode="date"
+              display={Platform.select({
+                ios: 'spinner',
+                android: 'default',
+                default: 'default'
+              })}
+              onChange={handleDateChange}
+              maximumDate={new Date()}
+              style={Platform.OS === 'web' ? styles.webDatePicker : undefined}
+            />
+          )}
+
           <View style={styles.switchContainer}>
             <Text variant="bodyLarge" style={{ color: colors.text }}>{t('recurringMonthly')}</Text>
             <Switch
@@ -497,4 +571,81 @@ const styles = StyleSheet.create({
     maxHeight: '50vh',
     overflow: 'auto',
   },
+  datePickerButton: {
+    borderRadius: 4,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.12)',
+    padding: 16,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  datePickerButtonWeb: {
+    cursor: 'pointer',
+    transition: 'background-color 0.2s ease',
+    ':hover': {
+      backgroundColor: 'rgba(0, 0, 0, 0.04)',
+    },
+  },
+  dateInputWrapper: {
+    ...Platform.select({
+      web: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'stretch',
+        justifyContent: 'stretch',
+      }
+    })
+  },
+  webDatePicker: {
+    width: '100%',
+    marginBottom: 16,
+  },
+  datePickerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  dateText: {
+    fontSize: 16,
+  },
 });
+
+// Add a style tag for the date input
+if (Platform.OS === 'web') {
+  const styleTag = document.createElement('style');
+  styleTag.textContent = `
+    .date-input-field {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 2;
+      padding: 0;
+      margin: 0;
+      border: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .date-input-field::-webkit-calendar-picker-indicator {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+  `;
+  document.head.appendChild(styleTag);
+}

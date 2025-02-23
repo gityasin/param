@@ -125,6 +125,20 @@ export const translations = {
     iconCatTravel: 'Travel & Outdoors',
     iconCatFamily: 'Family & Personal',
     iconCatServices: 'Services & Maintenance',
+
+    // Time Filters
+    weekly: 'Weekly',
+    monthly: 'This Month',
+    yearly: 'Yearly',
+    allTime: 'All Time',
+    custom: 'Custom',
+    customDateRange: 'Custom Date Range',
+    startDate: 'Start Date',
+    endDate: 'End Date',
+    selectDate: 'Select Date',
+    today: 'Today',
+    apply: 'Apply',
+    cancel: 'Cancel',
   },
   tr: {
     // General
@@ -252,5 +266,19 @@ export const translations = {
     iconCatTravel: 'Seyahat & Dış Mekan',
     iconCatFamily: 'Aile & Kişisel',
     iconCatServices: 'Hizmetler & Bakım',
+
+    // Time Filters
+    weekly: 'Haftalık',
+    monthly: 'Bu Ay',
+    yearly: 'Yıllık',
+    allTime: 'Tümü',
+    custom: 'Özel',
+    customDateRange: 'Özel Tarih Aralığı',
+    startDate: 'Başlangıç Tarihi',
+    endDate: 'Bitiş Tarihi',
+    selectDate: 'Tarih Seç',
+    today: 'Bugün',
+    apply: 'Uygula',
+    cancel: 'İptal',
   }
 };

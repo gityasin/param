@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Dimensions, Platform, TouchableWithoutFeedback } from 'react-native';
-import { Text, Surface, useTheme, SegmentedButtons } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, Dimensions, Platform, TouchableWithoutFeedback, Pressable } from 'react-native';
+import { Text, Surface, useTheme, SegmentedButtons, Menu, Button } from 'react-native-paper';
 import { VictoryPie, VictoryLabel, VictoryContainer, createContainer } from 'victory-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTransactions } from '../../context/TransactionsContext';
 import { formatCurrency } from '../../services/format';
 import { useLanguage } from '../../context/LanguageContext';
@@ -13,21 +14,29 @@ const CHART_TYPES = [
 ];
 
 export default function ChartScreen() {
-  const { state, selectedCurrency } = useTransactions();
+  const { 
+    state, 
+    selectedCurrency, 
+    activeFilter,
+    setActiveFilter,
+    FILTER_TYPES,
+    getFilteredTransactions,
+    customDateRange
+  } = useTransactions();
   const theme = useTheme();
   const { colors } = theme;
   const { t } = useLanguage();
   const { getCategoryColor } = useCategories();
   const [chartType, setChartType] = useState('pie');
-  const [activeIndex, setActiveIndex] = useState(null);
   const [selectedSegment, setSelectedSegment] = useState(null);
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
 
-  // Calculate total expenses and group by category
-  const expensesByCategory = state.transactions
+  // Calculate total expenses and group by category using filtered transactions
+  const filteredTransactions = getFilteredTransactions();
+  const expensesByCategory = filteredTransactions
     .filter(tx => tx.amount < 0)
     .reduce((acc, tx) => {
       const category = tx.category || 'Other';
-      // Find matching category with correct casing
       const existingCategory = Object.keys(acc).find(key => key.toLowerCase() === category.toLowerCase());
       const finalCategory = existingCategory || category;
       acc[finalCategory] = (acc[finalCategory] || 0) + Math.abs(tx.amount);
@@ -120,6 +129,70 @@ export default function ChartScreen() {
     );
   };
 
+  const renderFilterButton = () => {
+    let filterText = '';
+    switch (activeFilter) {
+      case FILTER_TYPES.monthly:
+        filterText = t('monthly');
+        break;
+      case FILTER_TYPES.allTime:
+        filterText = t('allTime');
+        break;
+      case FILTER_TYPES.custom:
+        if (customDateRange?.startDate) {
+          const start = new Date(customDateRange.startDate).toLocaleDateString();
+          const end = customDateRange.endDate 
+            ? new Date(customDateRange.endDate).toLocaleDateString()
+            : t('today');
+          filterText = `${start} - ${end}`;
+        } else {
+          filterText = t('custom');
+        }
+        break;
+    }
+
+    return (
+      <Menu
+        visible={showFilterMenu}
+        onDismiss={() => setShowFilterMenu(false)}
+        anchor={
+          <Button
+            mode="text"
+            onPress={() => setShowFilterMenu(true)}
+            icon={({ size, color }) => (
+              <MaterialCommunityIcons name="calendar" size={size} color={color} />
+            )}
+            style={styles.filterButton}
+          >
+            {filterText}
+          </Button>
+        }
+      >
+        <Menu.Item 
+          onPress={() => {
+            setActiveFilter(FILTER_TYPES.monthly);
+            setShowFilterMenu(false);
+          }} 
+          title={t('monthly')}
+        />
+        <Menu.Item 
+          onPress={() => {
+            setActiveFilter(FILTER_TYPES.allTime);
+            setShowFilterMenu(false);
+          }} 
+          title={t('allTime')}
+        />
+        <Menu.Item 
+          onPress={() => {
+            setActiveFilter(FILTER_TYPES.custom);
+            setShowFilterMenu(false);
+          }} 
+          title={t('custom')}
+        />
+      </Menu>
+    );
+  };
+
   const VictoryZoomVoronoiContainer = createContainer("zoom", "voronoi");
 
   return (
@@ -141,9 +214,12 @@ export default function ChartScreen() {
       </Text>
       
       <Surface style={[styles.chartContainer, { backgroundColor: colors.surface, width: '100%' }]} elevation={2}>
-        <Text variant="titleLarge" style={[styles.totalAmount, { color: colors.error, textAlign: 'center', width: '100%' }]}>
-          {t('totalSpent')}: {formatCurrency(total, selectedCurrency)}
-        </Text>
+        <View style={styles.headerRow}>
+          <Text variant="titleLarge" style={[styles.totalAmount, { color: colors.error, flex: 1 }]}>
+            {t('total')}: {formatCurrency(total, selectedCurrency)}
+          </Text>
+          {renderFilterButton()}
+        </View>
 
         <SegmentedButtons
           value={chartType}
@@ -173,6 +249,7 @@ export default function ChartScreen() {
               )}
               
               <VictoryPie
+                key={`filter-${activeFilter}`}
                 data={sortedChartData}
                 colorScale={sortedChartData.map(item => item.color)}
                 innerRadius={chartType === 'donut' ? 65 : 0}
@@ -189,20 +266,42 @@ export default function ChartScreen() {
                         const segment = sortedChartData[props.index];
                         const isCurrentlySelected = selectedSegment?.x === segment.x;
                         setSelectedSegment(isCurrentlySelected ? null : segment);
-                        return null; // Don't modify the segment style
+                        return null;
                       }
                     }]
                   }
                 }]}
                 animate={{
-                  duration: 400,
-                  easing: "quadInOut",
-                  onLoad: { duration: 400 }
+                  duration: 800,
+                  easing: "cubicInOut",
+                  data: { duration: 0 },
+                  onLoad: { duration: 0 },
+                  onExit: { duration: 0 },
+                  onEnter: { duration: 0 },
+                  transitionNonData: chartType ? {
+                    innerRadius: { 
+                      duration: 800, 
+                      easing: "cubicInOut",
+                      before: () => ({ 
+                        scale: 0.95,
+                        startAngle: chartType === 'donut' ? 0 : -30,
+                        endAngle: chartType === 'donut' ? 360 : 330
+                      }),
+                      after: () => ({ 
+                        scale: 1,
+                        startAngle: chartType === 'donut' ? -30 : 0,
+                        endAngle: chartType === 'donut' ? 330 : 360
+                      })
+                    }
+                  } : { duration: 0 }
                 }}
+                startAngle={chartType === 'donut' ? -30 : 0}
+                endAngle={chartType === 'donut' ? 330 : 360}
                 height={300}
                 width={300}
                 padding={30}
                 style={{
+                  parent: { transform: [{ scale: 1 }] },
                   data: {
                     stroke: colors.background,
                     strokeWidth: 2
@@ -210,12 +309,10 @@ export default function ChartScreen() {
                 }}
               />
             </View>
+            {renderSummary()}
           </>
-        ) : (
-          renderEmptyState()
-        )}
+        ) : renderEmptyState()}
       </Surface>
-      {renderSummary()}
     </ScrollView>
   );
 }
@@ -225,7 +322,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    padding: 16,
     paddingBottom: Platform.OS === 'ios' ? 100 : 80, // Adjusted padding for new navbar heights
     alignItems: 'center',
     width: '100%',
@@ -354,5 +450,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    width: '100%',
+  },
+  filterButton: {
+    marginLeft: 8,
   },
 });
