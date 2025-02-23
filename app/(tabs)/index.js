@@ -253,7 +253,11 @@ export default function HomeScreen() {
                 setDatePickerType(type);
                 handleDateSelect(e);
               }}
-              max={new Date().toISOString().split('T')[0]}
+              max={(() => {
+                const today = new Date();
+                today.setHours(23, 59, 59, 999);
+                return today.toISOString().split('T')[0];
+              })()}
               aria-label={ariaLabel}
               title={t('selectDate')}
               className="custom-date-input"
@@ -308,7 +312,11 @@ export default function HomeScreen() {
             )}
             mode="date"
             onChange={handleDateSelect}
-            maximumDate={new Date()}
+            maximumDate={(() => {
+              const today = new Date();
+              today.setHours(23, 59, 59, 999);
+              return today;
+            })()}
             display={Platform.select({
               ios: 'spinner',
               android: 'default'

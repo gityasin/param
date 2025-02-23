@@ -116,7 +116,11 @@ export default function AddTransactionScreen() {
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
   const [isEditable, setIsEditable] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    return today;
+  });
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
@@ -127,7 +131,9 @@ export default function AddTransactionScreen() {
       setCategory(existingTransaction.category || '');
       setTransactionType(existingTransaction.amount < 0 ? 'expense' : 'income');
       setIsRecurring(Boolean(existingTransaction.isRecurring));
-      setSelectedDate(new Date(existingTransaction.date));
+      const date = new Date(existingTransaction.date);
+      date.setHours(23, 59, 59, 999);
+      setSelectedDate(date);
     }
   }, [isEditing, existingTransaction]);
 
@@ -207,10 +213,10 @@ export default function AddTransactionScreen() {
     if (!isEditable) {
       setIsEditable(true);
     } else {
-      // Add a small delay before opening the menu
+      // Add a longer delay before opening the menu
       setTimeout(() => {
         setShowCategoryMenu(true);
-      }, 150); // 150ms delay for a smooth interaction
+      }, 750); // high delay for ios animations
     }
   };
 
@@ -472,7 +478,13 @@ export default function AddTransactionScreen() {
                     value={selectedDate.toISOString().split('T')[0]}
                     onChange={(e) => handleDateChange(e, new Date(e.target.value))}
                     className="date-input-field"
-                    max={new Date().toISOString().split('T')[0]}
+                    max={(() => {
+                      const today = new Date();
+                      today.setHours(23, 59, 59, 999);
+                      return today.toISOString().split('T')[0];
+                    })()}
+                    aria-label={t('selectDate')}
+                    title={t('selectDate')}
                   />
                 </View>
               )}
@@ -490,7 +502,11 @@ export default function AddTransactionScreen() {
                 default: 'default'
               })}
               onChange={handleDateChange}
-              maximumDate={new Date()}
+              maximumDate={(() => {
+                const today = new Date();
+                today.setHours(23, 59, 59, 999);
+                return today;
+              })()}
               style={Platform.OS === 'web' ? styles.webDatePicker : undefined}
             />
           )}
