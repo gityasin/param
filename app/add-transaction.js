@@ -54,39 +54,42 @@ const CustomSnackbar = ({ visible, message, style }) => {
 
 const GhostTextInput = ({ value, suggestion, onChangeText, ...props }) => {
   const theme = useTheme();
+  const suggestionText = suggestion && value && suggestion.toLowerCase() !== value.toLowerCase() 
+    ? suggestion.slice(value.length) 
+    : '';
+
   return (
     <View style={{ flex: 1 }}>
       <TextInput
+        {...props}
         value={value}
         onChangeText={onChangeText}
-        {...props}
+        style={[
+          props.style,
+          { backgroundColor: theme.colors.background }
+        ]}
       />
-      {suggestion && value && suggestion.toLowerCase() !== value.toLowerCase() && (
-        <View 
-          pointerEvents="none" 
-          style={{ 
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            top: 0,
-            bottom: 0,
-          }}
-        >
-          <TextInput
-            value={value + suggestion.slice(value.length)}
-            editable={false}
-            style={[
-              props.style,
-              {
-                backgroundColor: 'transparent',
-                color: theme.colors.placeholder,
-                opacity: 0.5,
-              }
-            ]}
-            mode={props.mode}
-            label={props.label}
-          />
-        </View>
+      {suggestionText !== '' && (
+        <TextInput
+          value={value + suggestionText}
+          editable={false}
+          style={[
+            props.style,
+            {
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              top: 0,
+              bottom: 0,
+              backgroundColor: 'transparent',
+              color: theme.colors.placeholder,
+              opacity: 0.5,
+            }
+          ]}
+          mode={props.mode}
+          label={props.label}
+          pointerEvents="none"
+        />
       )}
     </View>
   );
