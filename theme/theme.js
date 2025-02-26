@@ -10,6 +10,7 @@ const lightTheme = {
     primary: '#3B82F6',
     onPrimary: '#FFFFFF',
     secondary: '#F59E0B',
+    tertiary: '#2563EB', // Changed to blue
     background: '#FFFFFF',
     surface: '#F3F4F6',
     text: '#1F2937',
@@ -60,6 +61,7 @@ const darkTheme = {
     primary: '#60A5FA',
     onPrimary: '#FFFFFF',
     secondary: '#FBBF24',
+    tertiary: '#3B82F6', // Changed to blue
     background: '#111827',
     surface: '#1F2937',
     text: '#F9FAFB',

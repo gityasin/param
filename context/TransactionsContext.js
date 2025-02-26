@@ -1,5 +1,6 @@
 import React, { createContext, useReducer, useContext, useEffect, useState } from 'react';
-import { loadTransactions, saveTransactions } from '../services/storage';
+import { loadTransactions, saveTransactions, getStoredGoldPrices, fetchAndStoreGoldPrices } from '../services/storage';
+import { scheduleGoldPriceFetch, cleanupGoldPriceFetch } from '../services/goldPriceScheduler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const initialState = {
@@ -45,7 +46,9 @@ function transactionsReducer(state, action) {
       const newTransaction = {
         ...action.payload,
         category: existingCategory?.category || action.payload.category,
-        isRecurring: Boolean(action.payload.isRecurring)
+        isRecurring: Boolean(action.payload.isRecurring),
+        // Ensure type field is set (expense, income, or investment)
+        type: action.payload.type || (action.payload.amount < 0 ? 'expense' : 'income')
       };
       const transactionsWithNew = [...state.transactions, newTransaction]
         .sort((a, b) => {
@@ -67,7 +70,9 @@ function transactionsReducer(state, action) {
           tx.id === action.payload.id ? {
             ...action.payload,
             category: updatedExistingCategory?.category || action.payload.category,
-            isRecurring: Boolean(action.payload.isRecurring)
+            isRecurring: Boolean(action.payload.isRecurring),
+            // Ensure type field is set (expense, income, or investment)
+            type: action.payload.type || (action.payload.amount < 0 ? 'expense' : 'income')
           } : tx
         )
         .sort((a, b) => {
@@ -99,6 +104,7 @@ export function TransactionsProvider({ children }) {
   const [selectedCurrency, setSelectedCurrency] = useState('TRY');
   const [activeFilter, setActiveFilter] = useState(FILTER_TYPES.monthly);
   const [customDateRange, setCustomDateRange] = useState(null);
+  const [goldPrices, setGoldPrices] = useState(null);
 
   // Load saved filter and custom date range on mount
   useEffect(() => {
@@ -183,10 +189,27 @@ export function TransactionsProvider({ children }) {
   // Calculate totals for filtered transactions
   const getFilteredTotals = () => {
     const filteredTransactions = getFilteredTransactions();
+    
+    // Calculate investment value
+    const investments = filteredTransactions.filter(tx => tx.type === 'investment');
+    const investmentValue = investments.reduce((acc, inv) => {
+      // Use currentValue for the total investment value
+      return acc + (inv.currentValue || 0);
+    }, 0);
+    
+    // Calculate traditional income/expense
+    const regularTransactions = filteredTransactions.filter(tx => tx.type !== 'investment');
+    const income = regularTransactions.filter(tx => tx.amount > 0).reduce((acc, tx) => acc + tx.amount, 0);
+    const expenses = regularTransactions.filter(tx => tx.amount < 0).reduce((acc, tx) => acc + tx.amount, 0);
+    
+    // Total is now income - expenses + investment value
+    const total = income + expenses + investmentValue;
+    
     return {
-      total: filteredTransactions.reduce((acc, tx) => acc + tx.amount, 0),
-      income: filteredTransactions.filter(tx => tx.amount > 0).reduce((acc, tx) => acc + tx.amount, 0),
-      expenses: filteredTransactions.filter(tx => tx.amount < 0).reduce((acc, tx) => acc + tx.amount, 0)
+      total,
+      income,
+      expenses,
+      investmentValue
     };
   };
 
@@ -279,20 +302,152 @@ export function TransactionsProvider({ children }) {
     }
   };
 
+  // Get all investments
+  const getInvestments = () => {
+    return state.transactions.filter(tx => tx.type === 'investment');
+  };
+
+  // Calculate investment gain/loss
+  const calculateInvestmentGainLoss = (investment) => {
+    if (!investment || investment.type !== 'investment') return 0;
+    
+    const purchaseTotalCost = (investment.purchasePrice * investment.quantity) + (investment.fees || 0);
+    return (investment.currentValue || 0) - purchaseTotalCost;
+  };
+
+  // Initialize gold price fetching
+  useEffect(() => {
+    const initializeGoldPrices = async () => {
+      // Try to get stored prices first
+      const prices = await getStoredGoldPrices();
+      
+      // Check if we need to fetch fresh prices
+      const needsFreshPrices = !prices || (
+        prices.lastUpdate && 
+        (new Date().getTime() - new Date(prices.lastUpdate).getTime() > 15 * 60 * 1000) // Check if 15 minutes have passed
+      );
+      
+      if (needsFreshPrices) {
+        console.log('Fetching fresh gold prices on initialization...');
+        const freshPrices = await fetchAndStoreGoldPrices();
+        if (freshPrices) {
+          setGoldPrices({ prices: freshPrices, lastUpdate: new Date() });
+        }
+      } else {
+        setGoldPrices(prices);
+      }
+
+      // Set up the regular refresh schedule
+      scheduleGoldPriceFetch();
+    };
+
+    initializeGoldPrices();
+    
+    // Clean up the interval when component unmounts
+    return () => {
+      cleanupGoldPriceFetch();
+    };
+  }, []);
+
+  // Update gold investment values periodically
+  useEffect(() => {
+    if (!goldPrices?.prices) return;
+
+    const goldInvestments = state.transactions.filter(tx => 
+      tx.type === 'investment' && tx.assetType === 'Gold'
+    );
+
+    if (goldInvestments.length === 0) return;
+
+    const updatedTransactions = state.transactions.map(tx => {
+      if (tx.type === 'investment' && tx.assetType === 'Gold' && tx.goldCategory) {
+        const currentPrice = goldPrices.prices[tx.goldCategory];
+        if (currentPrice) {
+          return {
+            ...tx,
+            currentValue: currentPrice * tx.quantity
+          };
+        }
+      }
+      return tx;
+    });
+
+    if (JSON.stringify(updatedTransactions) !== JSON.stringify(state.transactions)) {
+      dispatch({ type: 'SET_TRANSACTIONS', payload: updatedTransactions });
+    }
+  }, [goldPrices, state.transactions]);
+
+  // Add getGoldCategories helper
+  const getGoldCategories = () => {
+    if (!goldPrices?.prices || Object.keys(goldPrices.prices).length === 0) {
+      // If no prices yet, return default categories based on the new API
+      return [
+        'Gram Altın',
+        'Çeyrek Altın (Yeni)',
+        'Çeyrek Altın (Eski)',
+        'Yarım Altın (Yeni)',
+        'Yarım Altın (Eski)',
+        'Tam Altın (Yeni)',
+        'Tam Altın (Eski)',
+        'Has Altın',
+        'Ata Altın (Yeni)',
+        'Ata Altın (Eski)',
+        'Beşli Ata Altın (Yeni)',
+        'Beşli Ata Altın (Eski)',
+        'Gremse Altın (Yeni)',
+        'Gremse Altın (Eski)',
+        '14 Ayar Altın',
+        '22 Ayar Altın'
+      ];
+    }
+    
+    // Get all available categories
+    const allCategories = Object.keys(goldPrices.prices);
+    
+    // Define priority categories in the desired order
+    const priorityCategories = [
+      'Gram Altın',
+      'Çeyrek Altın (Yeni)',
+      'Çeyrek Altın (Eski)',
+      'Yarım Altın (Yeni)',
+      'Yarım Altın (Eski)',
+      'Tam Altın (Yeni)',
+      'Tam Altın (Eski)'
+    ];
+    
+    // Filter out priority categories that exist in our data
+    const availablePriorityCategories = priorityCategories.filter(cat => 
+      allCategories.includes(cat)
+    );
+    
+    // Get remaining categories (excluding priority ones)
+    const remainingCategories = allCategories.filter(cat => 
+      !priorityCategories.includes(cat)
+    );
+    
+    // Return priority categories first, then the rest
+    return [...availablePriorityCategories, ...remainingCategories];
+  };
+
   return (
-    <TransactionsContext.Provider 
-      value={{ 
-        state, 
+    <TransactionsContext.Provider
+      value={{
+        ...state,
         dispatch,
         selectedCurrency,
-        handleCurrencyChange,
-        activeFilter,
-        setActiveFilter: handleFilterChange,
-        customDateRange,
-        setCustomRange,
+        setSelectedCurrency: handleCurrencyChange,
         getFilteredTransactions,
         getFilteredTotals,
-        FILTER_TYPES
+        getInvestments,
+        calculateInvestmentGainLoss,
+        activeFilter,
+        FILTER_TYPES,
+        handleFilterChange,
+        customDateRange,
+        setCustomRange,
+        getGoldCategories,
+        goldPrices,
+        setGoldPrices
       }}
     >
       {children}

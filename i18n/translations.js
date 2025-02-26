@@ -40,6 +40,14 @@ export const translations = {
     language: 'Language',
     languageDesc: 'Change application language',
     
+    // Reset App Section
+    resetAndData: 'Data Management',
+    resetApp: 'Reset App',
+    resetAppDesc: 'Erase all data and start fresh with onboarding',
+    resetAppConfirm: 'This will erase all your data and return to the onboarding screen. This action cannot be undone. Are you sure?',
+    reset: 'Reset',
+    errorResettingApp: 'Error resetting app. Please try again.',
+    
     // About Section
     about: 'About',
     version: 'Version',
@@ -56,6 +64,7 @@ export const translations = {
     note: 'Note',
     income: 'Income',
     expense: 'Expense',
+    investment: 'Investment',
     editTransaction: 'Edit Transaction',
     description: 'Description',
     recurringMonthly: 'Recurring Monthly?',
@@ -63,6 +72,31 @@ export const translations = {
     transactionAdded: 'Transaction added successfully!',
     recentTransactions: 'Recent Transactions',
     selectCategory: 'Select Category',
+    
+    // Investment Related
+    investments: 'Investments',
+    assetType: 'Asset Type',
+    stock: 'Stock',
+    bond: 'Bond',
+    mutualFund: 'Mutual Fund',
+    etf: 'ETF',
+    cryptocurrency: 'Cryptocurrency',
+    realEstate: 'Real Estate',
+    gold: 'Gold',
+    foreignCurrency: 'Foreign Currency',
+    otherAsset: 'Other',
+    symbol: 'Symbol',
+    name: 'Name',
+    quantity: 'Quantity',
+    purchaseDate: 'Purchase Date',
+    purchasePrice: 'Purchase Price',
+    currentValue: 'Current Value',
+    fees: 'Fees',
+    price: 'Price',
+    gainLoss: 'Gain/Loss',
+    myInvestments: 'My Investments',
+    investmentValue: 'Investment Value',
+    portfolio: 'Portfolio',
     
     // Form Validation
     descriptionRequired: 'Description is required',
@@ -139,6 +173,13 @@ export const translations = {
     today: 'Today',
     apply: 'Apply',
     cancel: 'Cancel',
+
+    // Gold Categories
+    goldCategory: 'Gold Category',
+    goldCategoryRequired: 'Please select a gold category',
+    selectGoldCategory: 'Select Gold Category',
+    noGoldCategoriesAvailable: 'No gold categories available',
+    recalculateValue: 'Recalculate Value',
   },
   tr: {
     // General
@@ -162,6 +203,7 @@ export const translations = {
     salary: 'Maaş',
     rent: 'Kira',
     groceries: 'Market',
+    investment: 'Yatırım',
     
     // Settings Screen
     appSettings: 'Uygulama Ayarları',
@@ -181,6 +223,14 @@ export const translations = {
     language: 'Dil',
     languageDesc: 'Uygulama dilini değiştir',
     
+    // Reset App Section
+    resetAndData: 'Veri Yönetimi',
+    resetApp: 'Uygulamayı Sıfırla',
+    resetAppDesc: 'Tüm verileri sil ve başlangıç ekranına dön',
+    resetAppConfirm: 'Bu işlem tüm verilerinizi silecek ve başlangıç ekranına döneceksiniz. Bu işlem geri alınamaz. Emin misiniz?',
+    reset: 'Sıfırla',
+    errorResettingApp: 'Uygulama sıfırlanırken hata oluştu. Lütfen tekrar deneyin.',
+    
     // About Section
     about: 'Hakkında',
     version: 'Versiyon',
@@ -197,6 +247,7 @@ export const translations = {
     note: 'Not',
     income: 'Gelir',
     expense: 'Gider',
+    investment: 'Yatırım',
     editTransaction: 'İşlem Düzenle',
     description: 'Açıklama',
     recurringMonthly: 'Aylık Tekrar?',
@@ -204,6 +255,31 @@ export const translations = {
     transactionAdded: 'İşlem başarıyla eklendi!',
     recentTransactions: 'Son İşlemler',
     selectCategory: 'Kategori Seç',
+    
+    // Investment Related
+    investments: 'Yatırımlar',
+    assetType: 'Varlık Türü',
+    stock: 'Hisse Senedi',
+    bond: 'Tahvil',
+    mutualFund: 'Yatırım Fonu',
+    etf: 'ETF',
+    cryptocurrency: 'Kripto Para',
+    realEstate: 'Gayrimenkul',
+    gold: 'Altın',
+    foreignCurrency: 'Döviz',
+    otherAsset: 'Diğer',
+    symbol: 'Sembol',
+    name: 'İsim',
+    quantity: 'Miktar',
+    purchaseDate: 'Alım Tarihi',
+    purchasePrice: 'Alım Fiyatı',
+    currentValue: 'Güncel Değer',
+    fees: 'Komisyon',
+    price: 'Fiyat',
+    gainLoss: 'Kâr/Zarar',
+    myInvestments: 'Yatırımlarım',
+    investmentValue: 'Yatırım Değeri',
+    portfolio: 'Portföy',
     
     // Form Validation
     descriptionRequired: 'Açıklama gerekli',
@@ -280,5 +356,12 @@ export const translations = {
     today: 'Bugün',
     apply: 'Uygula',
     cancel: 'İptal',
+
+    // Gold Categories
+    goldCategory: 'Altın Kategorisi',
+    goldCategoryRequired: 'Lütfen bir altın kategorisi seçin',
+    selectGoldCategory: 'Altın Kategorisi Seç',
+    noGoldCategoriesAvailable: 'Altın kategorisi bulunamıyor',
+    recalculateValue: 'Değeri Yeniden Hesapla',
   }
 };

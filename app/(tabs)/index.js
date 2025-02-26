@@ -133,7 +133,7 @@ if (Platform.OS === 'web') {
 export default function HomeScreen() {
   const { 
     activeFilter, 
-    setActiveFilter, 
+    handleFilterChange, 
     getFilteredTotals, 
     getFilteredTransactions, 
     selectedCurrency,
@@ -334,12 +334,78 @@ export default function HomeScreen() {
   };
 
   const renderHeader = () => (
-    <>
-      <Surface style={[styles.summaryContainer, { backgroundColor: theme.colors.surface }]} elevation={2}>
-        <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.text }]}>
-          {t('myBudget')}
-        </Text>
-
+    <Surface style={[styles.budgetBox, { backgroundColor: theme.colors.surface }]} elevation={4}>
+      <View style={styles.headerContainer}>
+        <View style={styles.balanceContainer}>
+          <Text variant="titleLarge" style={styles.budgetTitle}>{t('myBudget')}</Text>
+          <Text variant="headlineMedium" style={[
+            styles.balanceText,
+            { 
+              color: total > 0 ? theme.colors.success : 
+                     total < 0 ? theme.colors.error :
+                     theme.colors.onSurface 
+            }
+          ]}>
+            {formatCurrency(total, selectedCurrency)}
+          </Text>
+          <View style={styles.incomeExpenseRow}>
+            <View style={styles.incomeExpenseItem}>
+              <MaterialCommunityIcons
+                name="arrow-up-circle"
+                size={18}
+                color={theme.colors.success}
+                style={styles.incomeExpenseIcon}
+              />
+              <Text 
+                variant="bodyMedium" 
+                style={[
+                  styles.incomeExpenseText,
+                  { color: theme.colors.success }
+                ]}
+              >
+                {formatCurrency(income, selectedCurrency)}
+              </Text>
+            </View>
+            <View style={styles.incomeExpenseItem}>
+              <MaterialCommunityIcons
+                name="arrow-down-circle"
+                size={18}
+                color={theme.colors.error}
+                style={styles.incomeExpenseIcon}
+              />
+              <Text 
+                variant="bodyMedium" 
+                style={[
+                  styles.incomeExpenseText,
+                  { color: theme.colors.error }
+                ]}
+              >
+                {formatCurrency(Math.abs(expenses), selectedCurrency)}
+              </Text>
+            </View>
+            {/* Show investment value if available */}
+            {getFilteredTotals().investmentValue > 0 && (
+              <View style={styles.incomeExpenseItem}>
+                <MaterialCommunityIcons
+                  name="chart-line"
+                  size={18}
+                  color={theme.colors.tertiary}
+                  style={styles.incomeExpenseIcon}
+                />
+                <Text 
+                  variant="bodyMedium" 
+                  style={[
+                    styles.incomeExpenseText,
+                    { color: theme.colors.tertiary }
+                  ]}
+                >
+                  {formatCurrency(getFilteredTotals().investmentValue, selectedCurrency)}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+        
         <SegmentedButtons
           value={activeFilter}
           onValueChange={(value) => {
@@ -347,19 +413,20 @@ export default function HomeScreen() {
             if (value === FILTER_TYPES.custom && !(customDateRange?.startDate)) {
               setShowCustomFilterModal(true);
             }
-            setActiveFilter(value);
+            handleFilterChange(value);
           }}
           buttons={[
             { value: FILTER_TYPES.monthly, label: t('monthly') },
             { value: FILTER_TYPES.allTime, label: t('allTime') },
             { value: FILTER_TYPES.custom, label: t('custom') },
           ]}
-          style={styles.filterButtons}
+          style={[styles.filterButtons, { width: '100%' }]}
+          density="small"
         />
 
         {/* Show date range text anytime we have a custom range and are on custom tab */}
         {activeFilter === FILTER_TYPES.custom && customDateRange?.startDate && (
-          <Pressable onPress={handleDateRangeTextPress}>
+          <Pressable onPress={handleDateRangeTextPress} style={{ alignSelf: 'center' }}>
             <Text variant="bodyMedium" style={[styles.dateRangeText, { 
               color: theme.colors.primary,
               textDecorationLine: Platform.OS === 'web' ? 'underline' : 'none',
@@ -369,44 +436,8 @@ export default function HomeScreen() {
             </Text>
           </Pressable>
         )}
-        
-        <View style={styles.balanceRow}>
-          <Text variant="titleLarge" style={{ color: theme.colors.text }}>{t('totalBalance')}</Text>
-          <Text 
-            variant="headlineMedium"
-            style={{ color: total >= 0 ? theme.colors.success : theme.colors.error }}
-          >
-            {formatCurrency(total, selectedCurrency)}
-          </Text>
-        </View>
-
-        <Divider style={styles.divider} />
-        
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text variant="titleMedium" style={{ color: theme.colors.success }}>
-              {t('income')}
-            </Text>
-            <Text variant="titleLarge" style={{ color: theme.colors.success }}>
-              +{formatCurrency(income, selectedCurrency)}
-            </Text>
-          </View>
-          
-          <View style={styles.statItem}>
-            <Text variant="titleMedium" style={{ color: theme.colors.error }}>
-              {t('expense')}
-            </Text>
-            <Text variant="titleLarge" style={{ color: theme.colors.error }}>
-              {formatCurrency(Math.abs(expenses), selectedCurrency)}
-            </Text>
-          </View>
-        </View>
-      </Surface>
-
-      <Text variant="titleLarge" style={[styles.sectionTitle, { color: theme.colors.text }]}>
-        {t('recentTransactions')}
-      </Text>
-    </>
+      </View>
+    </Surface>
   );
 
   const renderEmptyList = () => (
@@ -474,50 +505,70 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
-    paddingBottom: Platform.OS === 'web' ? 80 : 100, // Increased padding for mobile
+    paddingBottom: Platform.OS === 'web' ? 80 : 100,
     flexGrow: 1,
     minHeight: Platform.OS === 'web' ? '100%' : 'auto',
   },
-  summaryContainer: {
+  budgetBox: {
     padding: 16,
     borderRadius: 8,
     marginBottom: 24,
-  },
-  title: {
-    marginBottom: 16,
-  },
-  balanceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  divider: {
-    marginVertical: 16,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  statItem: {
-    alignItems: 'flex-start',
-  },
-  sectionTitle: {
-    marginBottom: 16,
-  },
-  emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 32,
+  },
+  headerContainer: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  balanceContainer: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 8,
+  },
+  budgetTitle: {
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  balanceText: {
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  incomeExpenseRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  incomeExpenseItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    marginRight: 8,
+  },
+  incomeExpenseIcon: {
+    marginRight: 8,
+  },
+  incomeExpenseText: {
+    textAlign: 'center',
+  },
+  filterButtons: {
+    marginBottom: 16,
+    marginTop: 16,
+    alignSelf: 'stretch',
+  },
+  dateRangeText: {
+    textAlign: 'center',
+    marginBottom: 16,
   },
   fab: {
     position: 'absolute',
     margin: 16,
     right: 0,
-    bottom: Platform.OS === 'ios' ? 25 : 16, // Reduced bottom margin to bring FAB closer to bottom
-  },
-  filterButtons: {
-    marginBottom: 16,
+    bottom: Platform.OS === 'ios' ? 25 : 16,
   },
   dialogContainer: {
     backgroundColor: 'transparent',
@@ -554,13 +605,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
   },
-  applyButton: {
-    marginTop: 8,
-  },
-  dateRangeText: {
-    textAlign: 'center',
-    marginBottom: 16,
-  },
   modalActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -570,26 +614,9 @@ const styles = StyleSheet.create({
   modalButton: {
     minWidth: 100,
   },
-  datePickerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginVertical: 10,
-    gap: 10,
-  },
-  datePickerButton: {
-    padding: 10,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
-    flex: 1,
-    position: 'relative',
-  },
-  webDateInputWrapper: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    overflow: 'visible',
-    zIndex: 1,
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 32,
   },
 });

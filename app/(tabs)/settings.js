@@ -11,17 +11,19 @@ import { useCategories } from '../../context/CategoriesContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { CategoryEditor } from '../../components/CategoryEditor';
 import * as Notifications from 'expo-notifications';
+import { useRouter } from 'expo-router';
 
 export default function SettingsScreen() {
   const theme = useTheme();
   const { colors } = theme;
   const { isDarkMode, toggleTheme } = useAppTheme();
   const { language, changeLanguage, t } = useLanguage();
+  const router = useRouter();
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [showCurrencySelector, setShowCurrencySelector] = useState(false);
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const currencies = getAvailableCurrencies();
-  const { selectedCurrency, handleCurrencyChange } = useTransactions();
+  const { selectedCurrency, setSelectedCurrency, dispatch } = useTransactions();
   const { categories, addCategory, removeCategory, updateCategory, getCategoryColor, getCategoryIcon } = useCategories();
   
   // Category management state
@@ -33,6 +35,9 @@ export default function SettingsScreen() {
   const [showIconEditor, setShowIconEditor] = useState(false);
   const [categoryToEdit, setCategoryToEdit] = useState(null);
   const [categoryToDelete, setCategoryToDelete] = useState(null);
+  
+  // Reset app state
+  const [showResetConfirmation, setShowResetConfirmation] = useState(false);
 
   // Add useEffect to load notification settings
   useEffect(() => {
@@ -94,7 +99,7 @@ export default function SettingsScreen() {
   };
 
   const handleCurrencySelect = async (currencyCode) => {
-    await handleCurrencyChange(currencyCode);
+    await setSelectedCurrency(currencyCode);
     setShowCurrencySelector(false);
   };
 
@@ -129,6 +134,34 @@ export default function SettingsScreen() {
   const handleEditIconAndColor = (category) => {
     setCategoryToEdit(category);
     setShowIconEditor(true);
+  };
+
+  const handleResetApp = async () => {
+    try {
+      // Cancel any active notifications
+      await cancelAllNotifications();
+      
+      // Clear all stored data
+      const keysToPreserve = ['userLanguage']; // Optionally preserve language setting
+      
+      // Get all keys from AsyncStorage
+      const allKeys = await AsyncStorage.getAllKeys();
+      
+      // Filter out keys we want to preserve
+      const keysToRemove = allKeys.filter(key => !keysToPreserve.includes(key));
+      
+      // Remove all other keys
+      await AsyncStorage.multiRemove(keysToRemove);
+      
+      // Reset transactions in the context
+      dispatch({ type: 'SET_TRANSACTIONS', payload: [] });
+      
+      // Redirect to onboarding
+      router.replace('/onboarding');
+    } catch (error) {
+      console.error('Error resetting app:', error);
+      alert(t('errorResettingApp'));
+    }
   };
 
   const renderDialog = (visible, title, content, onDismiss, dialogCategory) => {
@@ -306,6 +339,25 @@ export default function SettingsScreen() {
         </Button>
       </View>,
       () => setShowLanguageSelector(false)
+    );
+  };
+  
+  const renderResetConfirmation = () => {
+    return renderDialog(
+      showResetConfirmation,
+      t('resetApp') || 'Reset App',
+      <View>
+        <Text style={{ marginBottom: 16, color: colors.text }}>
+          {t('resetAppConfirm') || 'This will erase all your data and return to the onboarding screen. This action cannot be undone. Are you sure?'}
+        </Text>
+        <View style={styles.dialogActions}>
+          <Button onPress={() => setShowResetConfirmation(false)}>{t('cancel')}</Button>
+          <Button onPress={handleResetApp} textColor={colors.error}>
+            {t('reset') || 'Reset'}
+          </Button>
+        </View>
+      </View>,
+      () => setShowResetConfirmation(false)
     );
   };
 
@@ -510,6 +562,38 @@ export default function SettingsScreen() {
         {/* Categories Section */}
         {renderCategorySelector()}
 
+        {/* Reset App Section */}
+        <Surface style={[styles.surface, { backgroundColor: colors.surface }]} elevation={1}>
+          <Text variant="titleLarge" style={[styles.sectionTitle, { color: colors.text }]}>
+            {t('resetAndData') || 'Data Management'}
+          </Text>
+          <List.Section style={styles.listSection}>
+            <List.Item
+              title={t('resetApp') || 'Reset App'}
+              description={t('resetAppDesc') || 'Erase all data and start fresh with onboarding'}
+              left={props => (
+                <MaterialCommunityIcons
+                  name="refresh"
+                  size={24}
+                  color={colors.error}
+                  style={props.style}
+                />
+              )}
+              onPress={() => setShowResetConfirmation(true)}
+              right={props => (
+                <MaterialCommunityIcons
+                  name="chevron-right"
+                  size={24}
+                  color={props.color}
+                  style={props.style}
+                />
+              )}
+              titleStyle={{ color: colors.error }}
+              descriptionStyle={{ color: colors.textSecondary }}
+            />
+          </List.Section>
+        </Surface>
+
         {/* About Section */}
         <Surface style={[styles.surface, { backgroundColor: colors.surface }]} elevation={1}>
           <Text variant="titleLarge" style={[styles.sectionTitle, { color: colors.text }]}>
@@ -580,6 +664,7 @@ export default function SettingsScreen() {
       {renderCurrencySelector()}
       {renderLanguageSelector()}
       {renderDeleteConfirmation()}
+      {renderResetConfirmation()}
 
       {/* Category Icon Editor Modal */}
       <RNModal

@@ -8,7 +8,7 @@ const CATEGORY_COLORS_KEY = '@category_colors';
 const CATEGORY_CUSTOM_ICONS_KEY = '@category_custom_icons';
 
 // Default category keys - these match the translation keys
-const DEFAULT_CATEGORY_KEYS = ['food', 'transport', 'shopping', 'bills', 'entertainment', 'salary', 'rent', 'groceries', 'other'];
+const DEFAULT_CATEGORY_KEYS = ['food', 'transport', 'shopping', 'bills', 'entertainment', 'salary', 'rent', 'groceries', 'other', 'investment'];
 
 // A set of distinguishable colors
 const CATEGORY_COLORS = [
@@ -46,6 +46,7 @@ export const CATEGORY_ICONS = {
   rent: 'home',
   salary: 'cash-multiple',
   other: 'dots-horizontal',
+  investment: 'chart-line',  // Add investment icon mapping
   
   // Housing & Utilities
   mortgage: 'bank',

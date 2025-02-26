@@ -11,7 +11,7 @@ import { useCategories } from '../context/CategoriesContext';
 const TransactionItem = ({ transaction }) => {
   const theme = useTheme();
   const { colors } = theme;
-  const { dispatch, selectedCurrency } = useTransactions();
+  const { dispatch, selectedCurrency, calculateInvestmentGainLoss } = useTransactions();
   const { getCategoryColor, getCategoryIcon } = useCategories();
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 });
@@ -19,10 +19,22 @@ const TransactionItem = ({ transaction }) => {
   const router = useRouter();
   const { t } = useLanguage();
 
+  const isInvestment = transaction.type === 'investment';
   const isExpense = transaction.amount < 0;
   const amount = Math.abs(transaction.amount);
-  const icon = getCategoryIcon(transaction.category);
-  const categoryColor = getCategoryColor(transaction.category);
+  const icon = isInvestment ? 
+    (transaction.assetType === 'Stock' ? 'chart-line' : 
+     transaction.assetType === 'Cryptocurrency' ? 'bitcoin' : 
+     transaction.assetType === 'Bond' ? 'file-document' : 
+     transaction.assetType === 'Mutual Fund' ? 'chart-box' : 
+     transaction.assetType === 'ETF' ? 'chart-line-variant' : 
+     transaction.assetType === 'Real Estate' ? 'home' : 
+     transaction.assetType === 'Gold' ? 'gold' : 
+     transaction.assetType === 'Foreign Currency' ? 'currency-usd' : 
+     'finance') : 
+    getCategoryIcon(transaction.category);
+  
+  const categoryColor = isInvestment ? colors.tertiary : getCategoryColor(transaction.category);
 
   const formattedDate = new Date(transaction.date).toLocaleDateString(undefined, {
     year: 'numeric',
@@ -64,8 +76,74 @@ const TransactionItem = ({ transaction }) => {
     setMenuVisible(true);
   };
 
+  // Generate subtitle text based on transaction type and date
+  const getSubtitleText = () => {
+    if (isInvestment) {
+      return transaction.symbol ? `${transaction.symbol} • ${formattedDate}` : formattedDate;
+    }
+    return formattedDate;
+  };
+  
+  // Generate the right side display (amount or investment value)
+  const getRightContent = (props) => {
+    if (isInvestment) {
+      const gainLoss = calculateInvestmentGainLoss(transaction);
+      const gainLossColor = gainLoss >= 0 ? colors.success : colors.error;
+      
+      return (
+        <View style={styles.rightContainer}>
+          <View style={styles.investmentValues}>
+            <Text
+              variant="bodyMedium"
+              style={[styles.currentValue, { color: colors.text }]}
+            >
+              {formatCurrency(transaction.currentValue || 0, selectedCurrency)}
+            </Text>
+            <Text
+              variant="bodySmall"
+              style={[styles.gainLoss, { color: gainLossColor }]}
+            >
+              {gainLoss >= 0 ? '+' : ''}{formatCurrency(gainLoss, selectedCurrency)}
+            </Text>
+          </View>
+        </View>
+      );
+    }
+    
+    return (
+      <View style={styles.rightContainer}>
+        {transaction.isRecurring && (
+          <MaterialCommunityIcons
+            name="refresh"
+            size={16}
+            color={colors.primary}
+            style={styles.recurringIcon}
+          />
+        )}
+        <Text
+          {...props}
+          variant="titleMedium"
+          style={[
+            styles.amount,
+            { color: isExpense ? colors.error : colors.success }
+          ]}
+        >
+          {isExpense ? '-' : '+'}{formatCurrency(amount, selectedCurrency)}
+        </Text>
+      </View>
+    );
+  };
+
   return (
-    <Surface style={styles.surface} elevation={1}>
+    <Surface 
+      style={[
+        styles.surface, 
+        {
+          backgroundColor: isExpense ? colors.error + '20' : isInvestment ? colors.tertiary + '20' : colors.success + '20'
+        }
+      ]} 
+      elevation={1}
+    >
       <View style={styles.container}>
         <Pressable 
           onPress={handleEdit}
@@ -73,13 +151,13 @@ const TransactionItem = ({ transaction }) => {
             styles.transactionPress,
             hovered && [
               styles.transactionPressHovered,
-              { backgroundColor: 'rgba(0, 0, 0, 0.17)' }
+              { backgroundColor: isExpense ? colors.error + '40' : isInvestment ? colors.tertiary + '40' : colors.success + '40' }
             ]
           ]}
         >
           <List.Item
-            title={transaction.description}
-            description={`${transaction.category} • ${formattedDate}`}
+            title={isInvestment ? transaction.assetType : transaction.category}
+            description={getSubtitleText()}
             left={props => (
               <MaterialCommunityIcons
                 name={icon}
@@ -88,28 +166,7 @@ const TransactionItem = ({ transaction }) => {
                 style={props.style}
               />
             )}
-            right={props => (
-              <View style={styles.rightContainer}>
-                {transaction.isRecurring && (
-                  <MaterialCommunityIcons
-                    name="refresh"
-                    size={16}
-                    color={colors.primary}
-                    style={styles.recurringIcon}
-                  />
-                )}
-                <Text
-                  {...props}
-                  variant="titleMedium"
-                  style={[
-                    styles.amount,
-                    { color: isExpense ? colors.error : colors.success }
-                  ]}
-                >
-                  {isExpense ? '-' : '+'}{formatCurrency(amount, selectedCurrency)}
-                </Text>
-              </View>
-            )}
+            right={props => getRightContent(props)}
             titleStyle={styles.title}
             descriptionStyle={[styles.description, { color: colors.textSecondary }]}
           />
@@ -247,9 +304,6 @@ const styles = StyleSheet.create({
       boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
     } : {}),
   },
-  recurringIcon: {
-    marginRight: 4,
-  },
   dropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -261,22 +315,33 @@ const styles = StyleSheet.create({
     } : {}),
   },
   dropdownItemHovered: {
-    backgroundColor: 'rgba(0, 0, 0, 0.17)',
+    backgroundColor: 'rgba(0, 0, 0, 0.08)',
   },
   dropdownText: {
     fontSize: 16,
-    marginLeft: 8,
+  },
+  investmentValues: {
+    alignItems: 'flex-end',
+  },
+  currentValue: {
+    fontWeight: '600',
+  },
+  gainLoss: {
+    fontWeight: '600',
+  },
+  recurringIcon: {
+    marginRight: -4,
   },
   transactionPress: {
     flex: 1,
     borderRadius: 8,
     ...(Platform.OS === 'web' ? {
       cursor: 'pointer',
-      transition: 'all 0.2s ease',
+      transition: 'background-color 0.2s ease',
     } : {}),
   },
   transactionPressHovered: {
-    transform: [{scale: 1.002}],
+    backgroundColor: 'rgba(0, 0, 0, 0.17)',
   },
 });
 
