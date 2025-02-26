@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { GOLD_API_KEY } from '@env';
 
 const TRANSACTIONS_KEY = '@transactions';
 const GOLD_PRICES_KEY = '@goldPrices';
@@ -73,11 +74,11 @@ export async function fetchAndStoreGoldPrices() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
     
-    const response = await fetch('http://209.38.188.91/gold-prices', {
+    const response = await fetch('https://haremaltinapi.site/gold-prices', {
       method: 'GET',
       headers: { 
         'Accept': 'application/json',
-        'X-API-KEY': 'betul_altin_sever_53'
+        'X-API-KEY': GOLD_API_KEY
       },
       signal: controller.signal
     });
