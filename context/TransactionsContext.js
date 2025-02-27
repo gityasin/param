@@ -9,7 +9,7 @@ const initialState = {
 
 // Filter types
 const FILTER_TYPES = {
-  monthly: 'monthly',
+  monthly: 'monthly',  // Now represents last 30 days, not current month
   allTime: 'allTime',
   custom: 'custom',
 };
@@ -150,10 +150,11 @@ export function TransactionsProvider({ children }) {
     let filtered;
     switch (activeFilter) {
       case FILTER_TYPES.monthly:
-        const monthStart = new Date();
-        monthStart.setDate(1); // Start of current month
-        monthStart.setHours(0, 0, 0, 0);
-        filtered = state.transactions.filter(tx => new Date(tx.date) >= monthStart);
+        // Changed from month start to last 30 days
+        const last30DaysStart = new Date();
+        last30DaysStart.setDate(last30DaysStart.getDate() - 30); // Last 30 days
+        last30DaysStart.setHours(0, 0, 0, 0);
+        filtered = state.transactions.filter(tx => new Date(tx.date) >= last30DaysStart);
         break;
 
       case FILTER_TYPES.custom:
@@ -197,19 +198,30 @@ export function TransactionsProvider({ children }) {
       return acc + (inv.currentValue || 0);
     }, 0);
     
+    // Calculate investment purchase total (initial money spent on investments)
+    const investmentPurchaseTotal = investments.reduce((acc, inv) => {
+      // Add purchase price * quantity plus any fees
+      return acc + (inv.purchasePrice * inv.quantity) + (inv.fees || 0);
+    }, 0);
+
+    // Calculate investment value difference (gain/loss)
+    const investmentValueDifference = investmentValue - investmentPurchaseTotal;
+    
     // Calculate traditional income/expense
     const regularTransactions = filteredTransactions.filter(tx => tx.type !== 'investment');
     const income = regularTransactions.filter(tx => tx.amount > 0).reduce((acc, tx) => acc + tx.amount, 0);
     const expenses = regularTransactions.filter(tx => tx.amount < 0).reduce((acc, tx) => acc + tx.amount, 0);
     
-    // Total is now income - expenses + investment value
-    const total = income + expenses + investmentValue;
+    // Total is now income + expenses + investment value difference
+    const total = income + expenses + investmentValueDifference;
     
     return {
       total,
       income,
       expenses,
-      investmentValue
+      investmentValue,
+      investmentPurchaseTotal,
+      investmentValueDifference
     };
   };
 

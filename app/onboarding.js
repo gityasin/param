@@ -19,7 +19,7 @@ export default function OnboardingScreen() {
   const theme = useTheme();
   const { colors } = theme;
   const { changeLanguage, t } = useLanguage();
-  const { handleCurrencyChange } = useTransactions();
+  const { setSelectedCurrency: updateCurrency } = useTransactions();
   const { isDarkMode, toggleTheme } = useAppTheme();
 
   const [selectedLanguage, setSelectedLanguage] = useState('tr');
@@ -60,7 +60,7 @@ export default function OnboardingScreen() {
 
   const handleCurrencySelect = (currency) => {
     setSelectedCurrency(currency);
-    handleCurrencyChange(currency);
+    updateCurrency(currency);
   };
 
   const handleThemeSelect = (isDark) => {

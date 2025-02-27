@@ -93,6 +93,7 @@ export const translations = {
     currentValue: 'Current Value',
     fees: 'Fees',
     price: 'Price',
+    unitPrice: 'Unit Price',
     gainLoss: 'Gain/Loss',
     myInvestments: 'My Investments',
     investmentValue: 'Investment Value',
@@ -162,7 +163,8 @@ export const translations = {
 
     // Time Filters
     weekly: 'Weekly',
-    monthly: 'This Month',
+    monthly: 'Monthly',
+    last30Days: 'Monthly',
     yearly: 'Yearly',
     allTime: 'All Time',
     custom: 'Custom',
@@ -276,6 +278,7 @@ export const translations = {
     currentValue: 'Güncel Değer',
     fees: 'Komisyon',
     price: 'Fiyat',
+    unitPrice: 'Birim Fiyat',
     gainLoss: 'Kâr/Zarar',
     myInvestments: 'Yatırımlarım',
     investmentValue: 'Yatırım Değeri',
@@ -345,7 +348,8 @@ export const translations = {
 
     // Time Filters
     weekly: 'Haftalık',
-    monthly: 'Bu Ay',
+    monthly: 'Aylık',
+    last30Days: 'Aylık',
     yearly: 'Yıllık',
     allTime: 'Tümü',
     custom: 'Özel',

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, Animated, Platform } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, StyleSheet, ScrollView, Animated, Platform, TouchableOpacity } from 'react-native';
 import { TextInput, Button, Switch, Text, HelperText, useTheme, SegmentedButtons, Menu, TouchableRipple } from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -146,6 +146,10 @@ export default function AddTransactionScreen() {
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
   
+  // Asset type scroll reference
+  const assetTypeScrollRef = useRef(null);
+  const [isScrollingAssetTypes, setIsScrollingAssetTypes] = useState(false);
+  
   // Investment specific fields
   const [assetType, setAssetType] = useState('Gold');
   const [symbol, setSymbol] = useState('');
@@ -156,15 +160,15 @@ export default function AddTransactionScreen() {
   const [goldCategory, setGoldCategory] = useState('');
 
   const assetTypes = [
-    { value: 'Gold', label: t('gold') },
-    { value: 'Foreign Currency', label: t('foreignCurrency') },
-    { value: 'Stock', label: t('stock') },
-    { value: 'Mutual Fund', label: t('mutualFund') },
-    { value: 'Cryptocurrency', label: t('cryptocurrency') },
-    { value: 'Bond', label: t('bond') },
-    { value: 'ETF', label: t('etf') },
-    { value: 'Real Estate', label: t('realEstate') },
-    { value: 'Other', label: t('otherAsset') },
+    { value: 'Gold', label: t('gold'), icon: 'gold' },
+    { value: 'Foreign Currency', label: t('foreignCurrency'), icon: 'currency-usd' },
+    { value: 'Stock', label: t('stock'), icon: 'chart-line' },
+    { value: 'Mutual Fund', label: t('mutualFund'), icon: 'chart-areaspline' },
+    { value: 'Cryptocurrency', label: t('cryptocurrency'), icon: 'bitcoin' },
+    { value: 'Bond', label: t('bond'), icon: 'file-certificate' },
+    { value: 'ETF', label: t('etf'), icon: 'chart-box' },
+    { value: 'Real Estate', label: t('realEstate'), icon: 'home-city' },
+    { value: 'Other', label: t('otherAsset'), icon: 'dots-horizontal' },
   ];
 
   useEffect(() => {
@@ -268,21 +272,6 @@ export default function AddTransactionScreen() {
     return false;
   }, [transactionType, assetType, goldCategory, goldPrices, quantity, currentValue, setGoldPrices]);
   
-  // Create a button component for manual recalculation
-  const recalculateButton = (transactionType === 'investment' && assetType === 'Gold') && (
-    <Button 
-      mode="contained"
-      onPress={async () => {
-        console.log('📱 Manual recalculation button pressed - forcing API call');
-        await calculateGoldValue(true);
-      }}
-      style={{ marginVertical: 8 }}
-      icon="calculator"
-    >
-      {t('recalculateValue')}
-    </Button>
-  );
-
   // Clean implementation of gold price initialization - runs only once when investment/gold is selected
   useEffect(() => {
     // Only run this effect when we first select gold as the asset type
@@ -467,15 +456,22 @@ export default function AddTransactionScreen() {
       // Add a longer delay before opening the menu
       setTimeout(() => {
         setShowCategoryMenu(true);
-      }, 750); // high delay for ios animations
+      }, 100); // high delay for ios animations
     }
   };
 
   const handleDateChange = (event, date) => {
     if (Platform.OS === 'web') {
-      // For web, we don't need to manage visibility state
-      if (date) {
-        setSelectedDate(date);
+      // For web, we handle the HTML input element event
+      if (event && event.target && event.target.value) {
+        const selectedDate = new Date(event.target.value);
+        // Make sure it's a valid date
+        if (!isNaN(selectedDate.getTime())) {
+          // Preserve time of the original date
+          const originalTime = new Date(date).getTime() % 86400000;
+          selectedDate.setTime(selectedDate.getTime() + originalTime);
+          setSelectedDate(selectedDate);
+        }
       }
       return;
     }
@@ -508,7 +504,7 @@ export default function AddTransactionScreen() {
         >
           <TextInput
             mode="outlined"
-            label={t('goldCategory')}
+            label={`${t('goldCategory')} *`}
             value={goldCategory}
             editable={false}
             error={!!errors.goldCategory}
@@ -546,6 +542,7 @@ export default function AddTransactionScreen() {
             }
           })}
           contentStyle={[
+            { backgroundColor: colors.surface },
             Platform.select({
               web: {
                 maxHeight: '50vh',
@@ -677,7 +674,7 @@ export default function AddTransactionScreen() {
           />
 
           <TouchableRipple 
-            onPress={() => setShowDatePicker(true)} 
+            onPress={() => Platform.OS !== 'web' && setShowDatePicker(true)}
             style={[
               styles.datePickerButton,
               Platform.OS === 'web' && styles.datePickerButtonWeb
@@ -735,24 +732,57 @@ export default function AddTransactionScreen() {
           {/* Investment specific fields */}
           {transactionType === 'investment' && (
             <>
-              <SegmentedButtons
-                value={assetType}
-                onValueChange={setAssetType}
-                buttons={assetTypes.slice(0, 3)} // Gold, Foreign Currency, Stock
-                style={styles.segmentedButtons}
-              />
-              <SegmentedButtons
-                value={assetType}
-                onValueChange={setAssetType}
-                buttons={assetTypes.slice(3, 6)} // Mutual Fund, Cryptocurrency, Bond
-                style={styles.segmentedButtons}
-              />
-              <SegmentedButtons
-                value={assetType}
-                onValueChange={setAssetType}
-                buttons={assetTypes.slice(6, 9)} // ETF, Real Estate, Other
-                style={styles.segmentedButtons}
-              />
+              {/* Asset Types Horizontal Scrollable Menu */}
+              <View style={styles.assetTypeScrollContainer}>
+                <ScrollView
+                  ref={assetTypeScrollRef}
+                  horizontal
+                  showsHorizontalScrollIndicator={true}
+                  onScrollBeginDrag={() => setIsScrollingAssetTypes(true)}
+                  onScrollEndDrag={() => setIsScrollingAssetTypes(false)}
+                  onMomentumScrollEnd={() => setIsScrollingAssetTypes(false)}
+                  style={[
+                    styles.assetTypeScroll,
+                    Platform.OS === 'web' && {
+                      scrollbarWidth: 'thin',
+                      scrollbarColor: 'rgba(0,0,0,0.3) transparent',
+                      WebkitOverflowScrolling: 'touch',
+                      msOverflowStyle: '-ms-autohiding-scrollbar',
+                    }
+                  ]}
+                  contentContainerStyle={styles.assetTypeScrollContent}
+                >
+                  {assetTypes.map((asset) => (
+                    <TouchableOpacity
+                      key={asset.value}
+                      style={[
+                        styles.assetTypeButton,
+                        { backgroundColor: colors.surfaceVariant },
+                        assetType === asset.value && {
+                          backgroundColor: colors.tertiary,
+                        }
+                      ]}
+                      onPress={() => setAssetType(asset.value)}
+                      accessible={true}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: assetType === asset.value }}
+                    >
+                      <MaterialCommunityIcons
+                        name={asset.icon}
+                        size={24}
+                        color={assetType === asset.value ? colors.onTertiary : colors.onSurfaceVariant}
+                        style={styles.assetTypeIcon}
+                      />
+                      <Text style={[
+                        styles.assetTypeText,
+                        { color: assetType === asset.value ? colors.onTertiary : colors.onSurfaceVariant }
+                      ]}>
+                        {asset.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
               
               {assetType === 'Gold' ? goldCategorySection : (
                 <>
@@ -790,7 +820,7 @@ export default function AddTransactionScreen() {
 
               <TextInput
                 mode="outlined"
-                label={t('quantity')}
+                label={t('quantity') + ' *'}
                 value={quantity}
                 onChangeText={handleQuantityChange}
                 keyboardType="decimal-pad"
@@ -803,7 +833,7 @@ export default function AddTransactionScreen() {
 
               <TextInput
                 mode="outlined"
-                label={t('price')}
+                label={t('unitPrice') + ' *'}
                 value={amount}
                 onChangeText={(text) => {
                   setAmount(text);
@@ -830,29 +860,41 @@ export default function AddTransactionScreen() {
                 style={styles.input}
                 error={!!errors.currentValue}
                 left={<TextInput.Affix text={getCurrencySymbol(selectedCurrency)} />}
+                right={
+                  <TextInput.Icon 
+                    icon="refresh"
+                    onPress={async () => {
+                      console.log('📱 Manual recalculation button pressed - forcing API call');
+                      await calculateGoldValue(true);
+                    }}
+                  />
+                }
               />
               <HelperText type="error" visible={!!errors.currentValue}>
                 {errors.currentValue}
               </HelperText>
               
-              {recalculateButton}
-              
-              <TextInput
-                mode="outlined"
-                label={t('fees')}
-                value={fees}
-                onChangeText={(text) => {
-                  setFees(text);
-                  setErrors({ ...errors, fees: '' });
-                }}
-                keyboardType="decimal-pad"
-                style={styles.input}
-                error={!!errors.fees}
-                left={<TextInput.Affix text={getCurrencySymbol(selectedCurrency)} />}
-              />
-              <HelperText type="error" visible={!!errors.fees}>
-                {errors.fees}
-              </HelperText>
+              {/* Only show fees field for non-Gold assets */}
+              {assetType !== 'Gold' && (
+                <>
+                  <TextInput
+                    mode="outlined"
+                    label={t('fees')}
+                    value={fees}
+                    onChangeText={(text) => {
+                      setFees(text);
+                      setErrors({ ...errors, fees: '' });
+                    }}
+                    keyboardType="decimal-pad"
+                    style={styles.input}
+                    error={!!errors.fees}
+                    left={<TextInput.Affix text={getCurrencySymbol(selectedCurrency)} />}
+                  />
+                  <HelperText type="error" visible={!!errors.fees}>
+                    {errors.fees}
+                  </HelperText>
+                </>
+              )}
 
               <TextInput
                 mode="outlined"
@@ -878,7 +920,7 @@ export default function AddTransactionScreen() {
                   anchor={
                     <GhostTextInput
                       mode="outlined"
-                      label={t('category')}
+                      label={t('category') + ' *'}
                       value={category}
                       suggestion={suggestion}
                       onChangeText={(text) => {
@@ -1016,7 +1058,7 @@ export default function AddTransactionScreen() {
 
               <TextInput
                 mode="outlined"
-                label={t('amount')}
+                label={t('amount') + ' *'}
                 value={amount}
                 onChangeText={(text) => {
                   setAmount(text);
@@ -1145,14 +1187,8 @@ const styles = StyleSheet.create({
         left: 0,
         width: '100%',
         height: '100%',
-        opacity: 0,
-        cursor: 'pointer',
         zIndex: 2,
-        padding: 0,
-        margin: 0,
-        border: 'none',
-        '-webkit-appearance': 'none',
-        appearance: 'none',
+        cursor: 'pointer',
       }
     })
   },
@@ -1253,6 +1289,52 @@ const styles = StyleSheet.create({
     backgroundColor: Platform.OS === 'web' ? 'rgba(0,0,0,0.02)' : undefined,
     cursor: 'pointer',
   },
+  // Asset type scrollable styles
+  assetTypeScrollContainer: {
+    marginVertical: 8,
+    overflow: 'hidden',
+    WebkitOverflowScrolling: 'touch',
+  },
+  assetTypeScroll: {
+    flexGrow: 0,
+    minHeight: 60,
+    scrollbarWidth: 'thin',
+    scrollbarColor: 'rgba(0,0,0,0.3) transparent',
+    msOverflowStyle: '-ms-autohiding-scrollbar',
+  },
+  assetTypeScrollContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    gap: 12,
+    paddingHorizontal: 8,
+  },
+  assetTypeButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginHorizontal: 2,
+    borderRadius: 16,
+    minWidth: 120,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  assetTypeIcon: {
+    marginRight: 8,
+  },
+  assetTypeText: {
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
 });
 
 // Add a style tag for the date input
@@ -1275,16 +1357,15 @@ if (Platform.OS === 'web') {
     }
     .date-input-field::-webkit-calendar-picker-indicator {
       position: absolute;
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       width: 100%;
       height: 100%;
       opacity: 0;
       cursor: pointer;
-      -webkit-appearance: none;
-      appearance: none;
+      z-index: 3;
     }
   `;
   document.head.appendChild(styleTag);

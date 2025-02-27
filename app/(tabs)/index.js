@@ -416,7 +416,7 @@ export default function HomeScreen() {
             handleFilterChange(value);
           }}
           buttons={[
-            { value: FILTER_TYPES.monthly, label: t('monthly') },
+            { value: FILTER_TYPES.monthly, label: t('last30Days') }, // Changed from 'monthly' to 'last30Days'
             { value: FILTER_TYPES.allTime, label: t('allTime') },
             { value: FILTER_TYPES.custom, label: t('custom') },
           ]}
